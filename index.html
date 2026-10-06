@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Block Breaker</title>
+  <title>Full Court | Block Breaker</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -22,6 +22,13 @@
       </div>
     </aside>
     <section class="game-stage" aria-label="Block Breaker">
+      <header class="arena-header">
+        <div>
+          <p class="eyebrow">BASKETBALL ARCADE / 1990s EDITION</p>
+          <h1>FULL COURT</h1>
+        </div>
+        <p class="edition-mark">LEGEND<br><strong>23</strong></p>
+      </header>
       <div class="canvas-shell">
         <canvas id="game" width="600" height="450" aria-label="Block Breaker game"></canvas>
         <div class="game-overlay" id="game-overlay" hidden aria-live="polite">
@@ -29,7 +36,7 @@
           <button id="restart-button" type="button">Play again</button>
         </div>
       </div>
-      <p>Move the paddle with the left and right arrow keys, or A and D.</p>
+      <p class="controls-copy">MOVE WITH <kbd>←</kbd> <kbd>→</kbd> OR <kbd>A</kbd> <kbd>D</kbd></p>
     </section>
   </main>
 

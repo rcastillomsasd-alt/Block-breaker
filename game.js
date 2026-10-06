@@ -13,8 +13,12 @@ const gameOverlay = document.getElementById("game-overlay");
 const gameMessage = document.getElementById("game-message");
 const restartButton = document.getElementById("restart-button");
 
-const WIDTH = canvas.width;   // 600
-const HEIGHT = canvas.height; // 450
+const WIDTH = 600;
+const HEIGHT = 450;
+const PIXEL_RATIO = Math.min(window.devicePixelRatio || 1, 3);
+canvas.width = WIDTH * PIXEL_RATIO;
+canvas.height = HEIGHT * PIXEL_RATIO;
+ctx.scale(PIXEL_RATIO, PIXEL_RATIO);
 
 
 // ------------------------------------------------------------
@@ -181,17 +185,123 @@ function moveBall(activeBall) {
 // white shapes.
 // ------------------------------------------------------------
 function draw() {
-  ctx.fillStyle = "black";
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-  ctx.fillStyle = "white";
-  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+  drawCourt();
+  drawPaddle();
   for (const activeBall of balls) {
-    ctx.fillStyle = activeBall.isStarter ? "white" : "#168bff";
-    ctx.fillRect(activeBall.x, activeBall.y, activeBall.width, activeBall.height);
+    drawBasketball(activeBall);
   }
 
   drawBricks();  // bricks.js
+}
+
+function drawCourt() {
+  const background = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
+  background.addColorStop(0, "#17171a");
+  background.addColorStop(0.5, "#272326");
+  background.addColorStop(1, "#111114");
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  const floor = ctx.createLinearGradient(0, HEIGHT * 0.42, 0, HEIGHT);
+  floor.addColorStop(0, "rgb(123 43 36 / 8%)");
+  floor.addColorStop(0.55, "rgb(161 75 49 / 19%)");
+  floor.addColorStop(1, "rgb(44 25 27 / 35%)");
+  ctx.fillStyle = floor;
+  ctx.fillRect(0, HEIGHT * 0.42, WIDTH, HEIGHT * 0.58);
+
+  for (let y = 204; y < HEIGHT; y += 18) {
+    ctx.fillStyle = y % 36 === 24 ? "rgb(255 255 255 / 2%)" : "rgb(0 0 0 / 5%)";
+    ctx.fillRect(0, y, WIDTH, 9);
+  }
+
+  ctx.save();
+  ctx.strokeStyle = "rgb(245 235 225 / 15%)";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(24, 24, WIDTH - 48, HEIGHT - 48);
+  ctx.beginPath();
+  ctx.moveTo(24, 185);
+  ctx.lineTo(WIDTH - 24, 185);
+  ctx.moveTo(24, 350);
+  ctx.lineTo(WIDTH - 24, 350);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(WIDTH / 2, 285, 72, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(WIDTH / 2, 285, 4, 0, Math.PI * 2);
+  ctx.fillStyle = "rgb(245 235 225 / 20%)";
+  ctx.fill();
+  ctx.restore();
+
+  const vignette = ctx.createRadialGradient(WIDTH / 2, HEIGHT / 2, 100, WIDTH / 2, HEIGHT / 2, 430);
+  vignette.addColorStop(0, "rgb(0 0 0 / 0%)");
+  vignette.addColorStop(1, "rgb(0 0 0 / 52%)");
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+}
+
+function drawPaddle() {
+  ctx.save();
+  ctx.shadowColor = "rgb(255 45 57 / 45%)";
+  ctx.shadowBlur = 14;
+  const paddleGradient = ctx.createLinearGradient(0, paddle.y, 0, paddle.y + paddle.height);
+  paddleGradient.addColorStop(0, "#fff1e8");
+  paddleGradient.addColorStop(0.22, "#e43a43");
+  paddleGradient.addColorStop(1, "#7c101c");
+  ctx.fillStyle = paddleGradient;
+  ctx.beginPath();
+  ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 6);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "rgb(255 255 255 / 80%)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBasketball(activeBall) {
+  const radius = activeBall.width / 2;
+  const centerX = activeBall.x + radius;
+  const centerY = activeBall.y + radius;
+  const ballGradient = ctx.createRadialGradient(
+    centerX - radius * 0.38,
+    centerY - radius * 0.45,
+    radius * 0.1,
+    centerX,
+    centerY,
+    radius * 1.1
+  );
+
+  if (activeBall.isStarter) {
+    ballGradient.addColorStop(0, "#ffcf86");
+    ballGradient.addColorStop(0.38, "#e98232");
+    ballGradient.addColorStop(1, "#873715");
+  } else {
+    ballGradient.addColorStop(0, "#e5f8ff");
+    ballGradient.addColorStop(0.38, "#37aaff");
+    ballGradient.addColorStop(1, "#064b9a");
+  }
+
+  ctx.save();
+  ctx.shadowColor = activeBall.isStarter ? "rgb(255 137 61 / 45%)" : "rgb(37 151 255 / 75%)";
+  ctx.shadowBlur = 10;
+  ctx.fillStyle = ballGradient;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = activeBall.isStarter ? "#381b12" : "#092c4c";
+  ctx.lineWidth = Math.max(1, radius * 0.14);
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius * 0.96, -Math.PI / 2, Math.PI / 2);
+  ctx.moveTo(centerX, centerY - radius);
+  ctx.arc(centerX - radius, centerY, radius, -Math.PI / 2, Math.PI / 2);
+  ctx.moveTo(centerX - radius * 0.8, centerY - radius * 0.6);
+  ctx.quadraticCurveTo(centerX + radius * 0.15, centerY, centerX - radius * 0.8, centerY + radius * 0.6);
+  ctx.moveTo(centerX + radius * 0.8, centerY - radius * 0.6);
+  ctx.quadraticCurveTo(centerX - radius * 0.15, centerY, centerX + radius * 0.8, centerY + radius * 0.6);
+  ctx.stroke();
+  ctx.restore();
 }
 
 
