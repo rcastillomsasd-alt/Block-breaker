@@ -1,4 +1,4 @@
-/* Black and white only. */
+/* Black and white with blue reserved for the multiball power-up. */
 * {
   box-sizing: border-box;
 }
@@ -14,16 +14,85 @@ body {
   font-family: "Courier New", monospace;
 }
 
-main {
-  width: 100%;
-  max-width: 640px;
+main.game-layout {
+  width: min(100%, 744px);
   padding: 16px;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 600px);
+  align-items: center;
+  gap: 20px;
+}
+
+.life-rail {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.rail-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.ball-holder {
+  width: 42px;
+  min-height: 148px;
+  padding: 10px 0;
+  border: 2px solid #fff;
+  border-bottom: 0;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.reserve-ball {
+  width: 13px;
+  aspect-ratio: 1;
+  flex: none;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.reserve-ball.spent {
+  visibility: hidden;
+}
+
+.spring {
+  width: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.spring-coil {
+  width: 20px;
+  height: 42px;
+  background: repeating-linear-gradient(135deg, transparent 0 4px, #fff 4px 6px, transparent 6px 10px);
+}
+
+.spring-base {
+  width: 42px;
+  height: 5px;
+  background: #fff;
+}
+
+.game-stage {
+  min-width: 0;
   text-align: center;
+}
+
+.canvas-shell {
+  position: relative;
 }
 
 canvas {
   display: block;
   width: 100%;
+  max-width: 600px;
   height: auto;
   border: 2px solid #fff;
   background: #000;
@@ -33,4 +102,64 @@ p {
   margin: 12px 0 0;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.game-overlay {
+  position: absolute;
+  inset: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgb(0 0 0 / 82%);
+}
+
+.game-overlay[hidden] {
+  display: none;
+}
+
+.game-overlay h1 {
+  margin: 0;
+  font-size: clamp(24px, 6vw, 40px);
+}
+
+.game-overlay button {
+  padding: 9px 14px;
+  border: 1px solid #fff;
+  background: #fff;
+  color: #000;
+  font: inherit;
+  cursor: pointer;
+}
+
+.game-overlay button:hover,
+.game-overlay button:focus-visible {
+  background: #168bff;
+  border-color: #168bff;
+  color: #fff;
+}
+
+@media (max-width: 520px) {
+  main.game-layout {
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .life-rail {
+    min-height: 0;
+  }
+
+  .ball-holder {
+    width: 34px;
+  }
+
+  .spring {
+    width: 34px;
+  }
+
+  .spring-base {
+    width: 34px;
+  }
 }

@@ -8,6 +8,10 @@
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const reserveHolder = document.getElementById("reserve-balls");
+const gameOverlay = document.getElementById("game-overlay");
+const gameMessage = document.getElementById("game-message");
+const restartButton = document.getElementById("restart-button");
 
 const WIDTH = canvas.width;   // 600
 const HEIGHT = canvas.height; // 450
@@ -20,22 +24,25 @@ const HEIGHT = canvas.height; // 450
 // A positive vy means the ball is moving DOWN the screen.
 // ------------------------------------------------------------
 const BALL_SPEED = 4;
+const BALL_SIZE = 12;
+const STARTING_RESERVES = 4;
 
-const ball = {
-  x: 0,
-  y: 0,
-  width: 12,
-  height: 12,
-  vx: 0,
-  vy: 0
-};
+let balls = [];
+let reserveCount = STARTING_RESERVES;
+let gameState = "playing";
 
-// Put the ball in the center and reset its speed and direction.
-function resetBall() {
-  ball.x = WIDTH / 2 - ball.width / 2;
-  ball.y = HEIGHT / 2 - ball.height / 2;
-  ball.vx = BALL_SPEED;  // right
-  ball.vy = BALL_SPEED;  // down
+function makeBall(x, y, vx, vy, isStarter = false) {
+  return { x, y, width: BALL_SIZE, height: BALL_SIZE, vx, vy, isStarter };
+}
+
+function makeStarterBall() {
+  return makeBall(
+    WIDTH / 2 - BALL_SIZE / 2,
+    HEIGHT / 2 - BALL_SIZE / 2,
+    BALL_SPEED,
+    BALL_SPEED,
+    true
+  );
 }
 
 
@@ -81,17 +88,69 @@ document.addEventListener("keyup", function (event) {
 // what they touched.
 // ------------------------------------------------------------
 function update() {
-  movePaddle();
-  moveBall();
-
-  bounceOffWalls();   // collisions.js
-  bounceOffPaddle();  // collisions.js
-  bounceOffBricks();  // collisions.js
-
-  // The ball fell off the bottom: back to the center.
-  if (ball.y > HEIGHT) {
-    resetBall();
+  if (gameState !== "playing") {
+    return;
   }
+
+  movePaddle();
+
+  for (let index = balls.length - 1; index >= 0; index--) {
+    const activeBall = balls[index];
+    moveBall(activeBall);
+
+    bounceOffWalls(activeBall);   // collisions.js
+    bounceOffPaddle(activeBall);  // collisions.js
+    const hitBrick = bounceOffBricks(activeBall);  // collisions.js
+
+    if (hitBrick && hitBrick.powerup) {
+      balls.push(makeBall(
+        hitBrick.x + hitBrick.width / 2 - BALL_SIZE / 2,
+        hitBrick.y + hitBrick.height / 2 - BALL_SIZE / 2,
+        -BALL_SPEED,
+        -BALL_SPEED
+      ));
+    }
+
+    if (activeBall.y > HEIGHT) {
+      balls.splice(index, 1);
+      if (activeBall.isStarter) {
+        if (reserveCount > 0) {
+          reserveCount--;
+          updateReserveHolder();
+          balls.push(makeStarterBall());
+        } else {
+          finishGame("Game Over");
+        }
+      }
+    }
+  }
+
+  if (bricks.length === 0) {
+    finishGame("You Win!");
+  }
+}
+
+function updateReserveHolder() {
+  const reserveBalls = reserveHolder.querySelectorAll(".reserve-ball");
+  reserveBalls.forEach((reserveBall, index) => {
+    reserveBall.classList.toggle("spent", index >= reserveCount);
+  });
+  reserveHolder.setAttribute("aria-label", `${reserveCount} spare balls`);
+}
+
+function finishGame(message) {
+  gameState = message === "You Win!" ? "won" : "lost";
+  gameMessage.textContent = message;
+  gameOverlay.hidden = false;
+}
+
+function resetGame() {
+  bricks = makeBricks();
+  balls = [makeStarterBall()];
+  reserveCount = STARTING_RESERVES;
+  gameState = "playing";
+  gameOverlay.hidden = true;
+  updateReserveHolder();
 }
 
 function movePaddle() {
@@ -111,9 +170,9 @@ function movePaddle() {
   }
 }
 
-function moveBall() {
-  ball.x = ball.x + ball.vx;
-  ball.y = ball.y + ball.vy;
+function moveBall(activeBall) {
+  activeBall.x = activeBall.x + activeBall.vx;
+  activeBall.y = activeBall.y + activeBall.vy;
 }
 
 
@@ -127,7 +186,10 @@ function draw() {
 
   ctx.fillStyle = "white";
   ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
-  ctx.fillRect(ball.x, ball.y, ball.width, ball.height);
+  for (const activeBall of balls) {
+    ctx.fillStyle = activeBall.isStarter ? "white" : "#168bff";
+    ctx.fillRect(activeBall.x, activeBall.y, activeBall.width, activeBall.height);
+  }
 
   drawBricks();  // bricks.js
 }
@@ -162,11 +224,12 @@ function frame(now) {
 }
 
 function start() {
-  bricks = makeBricks();  // bricks.js
-  resetBall();
+  resetGame();
   lastTime = performance.now();
   requestAnimationFrame(frame);
 }
+
+restartButton.addEventListener("click", resetGame);
 
 // Wait until all three script files have loaded, then start.
 window.addEventListener("load", start);

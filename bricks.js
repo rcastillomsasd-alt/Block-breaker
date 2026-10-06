@@ -29,13 +29,16 @@ function makeBricks() {
     }
   }
 
+  const powerupIndex = Math.floor(Math.random() * list.length);
+  list[powerupIndex].powerup = true;
+
   return list;
 }
 
 // Draws every brick in the list.
 function drawBricks() {
-  ctx.fillStyle = "white";
   for (const brick of bricks) {
+    ctx.fillStyle = brick.powerup ? "#168bff" : "white";
     ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
   }
 }
