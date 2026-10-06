@@ -192,6 +192,39 @@ kbd {
   text-shadow: 0 3px 20px rgb(239 66 77 / 50%);
 }
 
+.win-portrait {
+  width: min(160px, 30%);
+  margin: 0;
+  text-align: center;
+}
+
+.win-portrait[hidden] {
+  display: none;
+}
+
+.win-portrait img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border: 2px solid #f04a53;
+  box-shadow: 0 0 22px rgb(239 66 77 / 45%);
+}
+
+.win-portrait figcaption {
+  margin-top: 5px;
+  color: #d3c8c4;
+  font-family: "Courier New", monospace;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.win-portrait a {
+  color: #fff;
+  text-decoration-color: #f04a53;
+  text-underline-offset: 2px;
+}
+
 .game-overlay button {
   padding: 9px 14px;
   border: 1px solid #f04a53;
@@ -252,6 +285,14 @@ kbd {
 
   .game-overlay h1 {
     font-size: 28px;
+  }
+
+  .win-portrait {
+    width: min(92px, 34%);
+  }
+
+  .win-portrait figcaption {
+    font-size: 7px;
   }
 
   .edition-mark strong {

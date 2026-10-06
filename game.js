@@ -11,6 +11,7 @@ const ctx = canvas.getContext("2d");
 const reserveHolder = document.getElementById("reserve-balls");
 const gameOverlay = document.getElementById("game-overlay");
 const gameMessage = document.getElementById("game-message");
+const winPortrait = document.getElementById("win-portrait");
 const restartButton = document.getElementById("restart-button");
 
 const WIDTH = 600;
@@ -143,8 +144,10 @@ function updateReserveHolder() {
 }
 
 function finishGame(message) {
-  gameState = message === "You Win!" ? "won" : "lost";
+  const isWin = message === "You Win!";
+  gameState = isWin ? "won" : "lost";
   gameMessage.textContent = message;
+  winPortrait.hidden = !isWin;
   gameOverlay.hidden = false;
 }
 
