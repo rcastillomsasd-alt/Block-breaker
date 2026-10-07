@@ -12,6 +12,7 @@ const reserveHolder = document.getElementById("reserve-balls");
 const gameOverlay = document.getElementById("game-overlay");
 const gameMessage = document.getElementById("game-message");
 const winPortrait = document.getElementById("win-portrait");
+const watermelonPortrait = document.getElementById("watermelon-portrait");
 const restartButton = document.getElementById("restart-button");
 const levelLabel = document.getElementById("level-label");
 const levelMusic = document.getElementById("level-music");
@@ -168,7 +169,8 @@ function finishGame(message) {
   gameState = isWin ? "won" : "lost";
   minecraftAudio.pause();
   gameMessage.textContent = message;
-  winPortrait.hidden = !isWin;
+  winPortrait.hidden = !isWin || currentLevel !== 1;
+  watermelonPortrait.hidden = !isWin || currentLevel !== 2;
   restartButton.textContent = isWin && currentLevel === 1 ? "Next Level" : "Play Again";
   gameOverlay.hidden = false;
 }
