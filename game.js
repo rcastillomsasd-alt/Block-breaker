@@ -14,6 +14,9 @@ const gameMessage = document.getElementById("game-message");
 const winPortrait = document.getElementById("win-portrait");
 const restartButton = document.getElementById("restart-button");
 const levelLabel = document.getElementById("level-label");
+const levelMusic = document.getElementById("level-music");
+const minecraftTrackInput = document.getElementById("minecraft-track");
+const minecraftAudio = document.getElementById("minecraft-audio");
 
 const WIDTH = 600;
 const HEIGHT = 450;
@@ -37,6 +40,7 @@ let balls = [];
 let reserveCount = STARTING_RESERVES;
 let gameState = "playing";
 let currentLevel = 1;
+let minecraftTrackUrl = null;
 
 function makeBall(x, y, vx, vy, isStarter = false) {
   return { x, y, width: BALL_SIZE, height: BALL_SIZE, vx, vy, isStarter };
@@ -87,6 +91,20 @@ document.addEventListener("keydown", function (event) {
 
 document.addEventListener("keyup", function (event) {
   keys[event.key.toLowerCase()] = false;
+});
+
+minecraftTrackInput.addEventListener("change", function () {
+  const track = minecraftTrackInput.files[0];
+  if (!track) {
+    return;
+  }
+
+  if (minecraftTrackUrl) {
+    URL.revokeObjectURL(minecraftTrackUrl);
+  }
+  minecraftTrackUrl = URL.createObjectURL(track);
+  minecraftAudio.src = minecraftTrackUrl;
+  minecraftAudio.play().catch(() => {});
 });
 
 
@@ -148,6 +166,7 @@ function updateReserveHolder() {
 function finishGame(message) {
   const isWin = message === "You Win!";
   gameState = isWin ? "won" : "lost";
+  minecraftAudio.pause();
   gameMessage.textContent = message;
   winPortrait.hidden = !isWin;
   restartButton.textContent = isWin && currentLevel === 1 ? "Next Level" : "Play Again";
@@ -180,6 +199,13 @@ function updateLevelTheme() {
   const isMinecraftLevel = currentLevel === 2;
   document.body.classList.toggle("minecraft-level", isMinecraftLevel);
   document.getElementById("minecraft-character").hidden = !isMinecraftLevel;
+  levelMusic.hidden = !isMinecraftLevel;
+  if (!isMinecraftLevel) {
+    minecraftAudio.pause();
+    minecraftAudio.currentTime = 0;
+  } else if (minecraftAudio.src) {
+    minecraftAudio.play().catch(() => {});
+  }
   document.getElementById("edition-label").textContent = isMinecraftLevel ? "LEVEL" : "LEGEND";
   levelLabel.textContent = isMinecraftLevel ? "02" : "23";
   document.getElementById("arena-eyebrow").textContent = isMinecraftLevel
