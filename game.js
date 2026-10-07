@@ -13,6 +13,7 @@ const gameOverlay = document.getElementById("game-overlay");
 const gameMessage = document.getElementById("game-message");
 const winPortrait = document.getElementById("win-portrait");
 const restartButton = document.getElementById("restart-button");
+const levelLabel = document.getElementById("level-label");
 
 const WIDTH = 600;
 const HEIGHT = 450;
@@ -35,6 +36,7 @@ const STARTING_RESERVES = 4;
 let balls = [];
 let reserveCount = STARTING_RESERVES;
 let gameState = "playing";
+let currentLevel = 1;
 
 function makeBall(x, y, vx, vy, isStarter = false) {
   return { x, y, width: BALL_SIZE, height: BALL_SIZE, vx, vy, isStarter };
@@ -148,16 +150,42 @@ function finishGame(message) {
   gameState = isWin ? "won" : "lost";
   gameMessage.textContent = message;
   winPortrait.hidden = !isWin;
+  restartButton.textContent = isWin && currentLevel === 1 ? "Next Level" : "Play Again";
   gameOverlay.hidden = false;
 }
 
 function resetGame() {
-  bricks = makeBricks();
-  balls = [makeStarterBall()];
+  currentLevel = 1;
   reserveCount = STARTING_RESERVES;
+  updateLevelTheme();
+  resetLevelBoard();
+}
+
+function startNextLevel() {
+  currentLevel = 2;
+  updateLevelTheme();
+  resetLevelBoard();
+}
+
+function resetLevelBoard() {
+  bricks = makeBricks(currentLevel);
+  balls = [makeStarterBall()];
+  paddle.x = WIDTH / 2 - paddle.width / 2;
   gameState = "playing";
   gameOverlay.hidden = true;
   updateReserveHolder();
+}
+
+function updateLevelTheme() {
+  const isMinecraftLevel = currentLevel === 2;
+  document.body.classList.toggle("minecraft-level", isMinecraftLevel);
+  document.getElementById("minecraft-character").hidden = !isMinecraftLevel;
+  document.getElementById("edition-label").textContent = isMinecraftLevel ? "LEVEL" : "LEGEND";
+  levelLabel.textContent = isMinecraftLevel ? "02" : "23";
+  document.getElementById("arena-eyebrow").textContent = isMinecraftLevel
+    ? "VOXEL QUEST / DIAMOND ARMOR"
+    : "BASKETBALL ARCADE / 1990s EDITION";
+  document.querySelector(".arena-header h1").textContent = isMinecraftLevel ? "DIAMOND COURT" : "FULL COURT";
 }
 
 function movePaddle() {
@@ -198,6 +226,11 @@ function draw() {
 }
 
 function drawCourt() {
+  if (currentLevel === 2) {
+    drawMinecraftCourt();
+    return;
+  }
+
   const background = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
   background.addColorStop(0, "#17171a");
   background.addColorStop(0.5, "#272326");
@@ -243,8 +276,66 @@ function drawCourt() {
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 }
 
+function drawMinecraftCourt() {
+  ctx.fillStyle = "#78bce8";
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  for (let row = 0; row < 8; row++) {
+    const y = 150 + row * 24;
+    const parallax = row * 13;
+    for (let col = -1; col < 14; col++) {
+      const x = col * 52 - parallax;
+      const height = 35 + ((col * 7 + row * 11 + 90) % 4) * 12;
+      ctx.fillStyle = row % 2 === 0 ? "#557d57" : "#456949";
+      ctx.fillRect(x, y - height, 54, height + 2);
+      ctx.fillStyle = "#79a968";
+      ctx.fillRect(x, y - height, 54, 7);
+      ctx.fillStyle = "rgb(25 54 42 / 24%)";
+      ctx.fillRect(x + 46, y - height, 8, height + 2);
+      if ((col + row) % 3 === 0) {
+        ctx.fillStyle = "#3e684f";
+        ctx.fillRect(x + 13, y - height - 12, 24, 13);
+      }
+    }
+  }
+
+  ctx.fillStyle = "#7e5839";
+  ctx.fillRect(0, 356, WIDTH, HEIGHT - 356);
+  ctx.fillStyle = "#936b43";
+  ctx.fillRect(0, 356, WIDTH, 11);
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 13; col++) {
+      const x = col * 50 + (row % 2) * 25;
+      const y = 368 + row * 22;
+      ctx.fillStyle = (row + col) % 2 === 0 ? "#8a6341" : "#745035";
+      ctx.fillRect(x, y, 49, 21);
+      ctx.fillStyle = "rgb(255 221 157 / 10%)";
+      ctx.fillRect(x + 2, y + 2, 45, 2);
+    }
+  }
+
+  ctx.strokeStyle = "rgb(227 255 244 / 28%)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(18, 18, WIDTH - 36, HEIGHT - 36);
+  ctx.fillStyle = "rgb(255 255 255 / 16%)";
+  ctx.fillRect(18, 18, WIDTH - 36, 3);
+}
+
 function drawPaddle() {
   ctx.save();
+  if (currentLevel === 2) {
+    ctx.shadowColor = "rgb(66 245 245 / 48%)";
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = "#176f85";
+    ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+    ctx.fillStyle = "#76f0ee";
+    ctx.fillRect(paddle.x + 2, paddle.y + 2, paddle.width - 4, 4);
+    ctx.fillStyle = "#36b9c7";
+    ctx.fillRect(paddle.x + 5, paddle.y + 7, paddle.width - 10, 3);
+    ctx.restore();
+    return;
+  }
+
   ctx.shadowColor = "rgb(255 45 57 / 45%)";
   ctx.shadowBlur = 14;
   const paddleGradient = ctx.createLinearGradient(0, paddle.y, 0, paddle.y + paddle.height);
@@ -266,6 +357,16 @@ function drawBasketball(activeBall) {
   const radius = activeBall.width / 2;
   const centerX = activeBall.x + radius;
   const centerY = activeBall.y + radius;
+  if (currentLevel === 2) {
+    ctx.fillStyle = "#171719";
+    ctx.fillRect(activeBall.x, activeBall.y, activeBall.width, activeBall.height);
+    ctx.fillStyle = activeBall.isStarter ? "#e58b45" : "#4ce7ed";
+    ctx.fillRect(activeBall.x + 2, activeBall.y + 2, activeBall.width - 4, activeBall.height - 4);
+    ctx.fillStyle = "rgb(255 255 255 / 60%)";
+    ctx.fillRect(activeBall.x + 3, activeBall.y + 2, 3, 2);
+    return;
+  }
+
   const ballGradient = ctx.createRadialGradient(
     centerX - radius * 0.38,
     centerY - radius * 0.45,
@@ -342,7 +443,14 @@ function start() {
   requestAnimationFrame(frame);
 }
 
-restartButton.addEventListener("click", resetGame);
+restartButton.addEventListener("click", function () {
+  if (gameState === "won" && currentLevel === 1) {
+    startNextLevel();
+    return;
+  }
+
+  resetGame();
+});
 
 // Wait until all three script files have loaded, then start.
 window.addEventListener("load", start);

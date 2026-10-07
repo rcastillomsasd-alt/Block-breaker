@@ -24,10 +24,10 @@
     <section class="game-stage" aria-label="Block Breaker">
       <header class="arena-header">
         <div>
-          <p class="eyebrow">BASKETBALL ARCADE / 1990s EDITION</p>
+          <p class="eyebrow" id="arena-eyebrow">BASKETBALL ARCADE / 1990s EDITION</p>
           <h1>FULL COURT</h1>
         </div>
-        <p class="edition-mark">LEGEND<br><strong>23</strong></p>
+        <p class="edition-mark"><span id="edition-label">LEGEND</span><br><strong id="level-label">23</strong></p>
       </header>
       <div class="canvas-shell">
         <canvas id="game" width="600" height="450" aria-label="Block Breaker game"></canvas>
@@ -46,6 +46,25 @@
       </div>
       <p class="controls-copy">MOVE WITH <kbd>←</kbd> <kbd>→</kbd> OR <kbd>A</kbd> <kbd>D</kbd></p>
     </section>
+    <aside class="minecraft-character" id="minecraft-character" aria-label="Steve wearing diamond armor" hidden>
+      <p class="character-label">STEVE<br><span>DIAMOND ARMOR</span></p>
+      <div class="voxel-steve" aria-hidden="true">
+        <div class="steve-head">
+          <div class="steve-face"></div>
+          <div class="steve-helmet"></div>
+        </div>
+        <div class="steve-body">
+          <div class="steve-arm left"></div>
+          <div class="steve-chest"></div>
+          <div class="steve-arm right"></div>
+        </div>
+        <div class="steve-legs">
+          <div class="steve-leg"></div>
+          <div class="steve-leg"></div>
+        </div>
+        <div class="steve-boots"><span></span><span></span></div>
+      </div>
+    </aside>
   </main>
 
   <!-- The order matters: game.js goes first because the other files use its settings. -->

@@ -91,6 +91,7 @@ main.game-layout {
 .game-stage {
   min-width: 0;
   text-align: center;
+  grid-column: 2;
 }
 
 .arena-header {
@@ -243,11 +244,210 @@ kbd {
   color: #fff;
 }
 
+.minecraft-character {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+  width: 150px;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.minecraft-character[hidden] {
+  display: none;
+}
+
+.character-label {
+  margin: 0 0 14px;
+  color: #d6ffff;
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1.5;
+  text-align: center;
+  text-shadow: 2px 2px #164854;
+}
+
+.character-label span {
+  color: #61e5e9;
+  font-size: 8px;
+}
+
+.voxel-steve {
+  position: relative;
+  width: 112px;
+  height: 244px;
+  filter: drop-shadow(8px 9px 0 rgb(0 0 0 / 32%));
+  image-rendering: pixelated;
+}
+
+.steve-head {
+  position: absolute;
+  top: 4px;
+  left: 25px;
+  width: 62px;
+  height: 62px;
+  background: #b77951;
+  box-shadow: inset -8px -7px #895338, inset 6px 5px #d69a69;
+}
+
+.steve-face {
+  position: absolute;
+  top: 28px;
+  left: 10px;
+  width: 42px;
+  height: 18px;
+  background: linear-gradient(90deg, #3d2922 0 8px, transparent 8px 25px, #3d2922 25px 33px, transparent 33px),
+    linear-gradient(#e1b07d 0 10px, #533b31 10px 15px, #815039 15px);
+}
+
+.steve-helmet {
+  position: absolute;
+  top: -5px;
+  left: -7px;
+  width: 76px;
+  height: 25px;
+  background: linear-gradient(#b6ffff 0 6px, #50d7df 6px 18px, #228c9a 18px);
+  border: 4px solid #caffff;
+  box-shadow: inset -7px -4px #187984;
+}
+
+.steve-body {
+  position: absolute;
+  top: 69px;
+  left: 12px;
+  width: 88px;
+  height: 91px;
+}
+
+.steve-chest {
+  position: absolute;
+  left: 18px;
+  width: 54px;
+  height: 86px;
+  background: linear-gradient(90deg, #28aebc 0 8px, #72eff0 8px 43px, #248591 43px);
+  border: 5px solid #b7ffff;
+  box-shadow: inset 0 -14px #288691;
+}
+
+.steve-arm {
+  position: absolute;
+  top: 4px;
+  width: 20px;
+  height: 72px;
+  background: linear-gradient(90deg, #2a9eaa, #6be0e2 65%, #227784);
+  border: 3px solid #a2f8f6;
+}
+
+.steve-arm.left {
+  left: 0;
+}
+
+.steve-arm.right {
+  right: 0;
+}
+
+.steve-legs {
+  position: absolute;
+  top: 161px;
+  left: 24px;
+  display: flex;
+  gap: 5px;
+}
+
+.steve-leg {
+  width: 29px;
+  height: 62px;
+  background: linear-gradient(90deg, #258894, #55cbd1 65%, #1b6573);
+  border: 4px solid #98eff0;
+}
+
+.steve-boots {
+  position: absolute;
+  top: 218px;
+  left: 19px;
+  display: flex;
+  gap: 4px;
+}
+
+.steve-boots span {
+  width: 35px;
+  height: 16px;
+  background: #21808a;
+  border: 3px solid #b2fbfa;
+  border-top: 4px solid #62d9dc;
+}
+
+body.minecraft-level {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 51px, rgb(9 49 56 / 23%) 52px 54px),
+    linear-gradient(145deg, #133c48, #10252e 56%, #151b21);
+  color: #e4ffff;
+  font-family: "Courier New", monospace;
+}
+
+body.minecraft-level main.game-layout {
+  width: min(100%, 1010px);
+  grid-template-columns: 76px minmax(0, 660px) 150px;
+}
+
+body.minecraft-level .arena-header h1 {
+  color: #b9ffff;
+  text-shadow: 3px 3px #176c78;
+}
+
+body.minecraft-level .eyebrow,
+body.minecraft-level .edition-mark strong {
+  color: #55e4e9;
+}
+
+body.minecraft-level canvas {
+  border-color: #4de0e3;
+  box-shadow: 0 18px 55px rgb(0 0 0 / 48%), 0 0 0 5px rgb(59 207 213 / 11%);
+}
+
+body.minecraft-level .controls-copy {
+  color: #b5dcda;
+}
+
+body.minecraft-level kbd {
+  border-color: #3a8388;
+  background: #173d45;
+}
+
 @media (max-width: 520px) {
   main.game-layout {
     grid-template-columns: 42px minmax(0, 1fr);
     gap: 8px;
     padding: 12px 8px;
+  }
+
+  .game-stage {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .minecraft-character {
+    grid-column: 2;
+    grid-row: 2;
+    width: 100%;
+    min-height: 0;
+    flex-direction: row;
+    gap: 16px;
+    margin-top: 12px;
+  }
+
+  .character-label {
+    margin: 0;
+  }
+
+  .voxel-steve {
+    transform: scale(0.72);
+    transform-origin: center top;
+    margin-bottom: -68px;
   }
 
   .life-rail {
