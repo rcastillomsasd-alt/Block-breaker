@@ -306,6 +306,7 @@ kbd {
   width: 160px;
   height: 130px;
   object-fit: contain;
+  mix-blend-mode: multiply;
   filter: drop-shadow(4px 8px 0 rgb(75 45 45 / 24%));
 }
 
@@ -318,6 +319,7 @@ kbd {
   object-fit: contain;
   border-color: #ffe0a0;
   background: linear-gradient(180deg, #f29b77, #ffd99b 60%, #42a9ad 61%);
+  mix-blend-mode: multiply;
   box-shadow: 0 0 22px rgb(255 218 147 / 42%);
 }
 
