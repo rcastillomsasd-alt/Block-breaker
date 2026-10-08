@@ -184,6 +184,7 @@ function resetGame() {
 
 function startNextLevel() {
   currentLevel = 2;
+  reserveCount = STARTING_RESERVES;
   updateLevelTheme();
   resetLevelBoard();
 }
