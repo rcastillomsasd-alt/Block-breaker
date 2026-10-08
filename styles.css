@@ -285,6 +285,46 @@ kbd {
   image-rendering: pixelated;
 }
 
+.bike-character {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+  width: 150px;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.bike-character[hidden] {
+  display: none;
+}
+
+.bike-image {
+  display: block;
+  width: 160px;
+  height: 130px;
+  object-fit: contain;
+  filter: drop-shadow(4px 8px 0 rgb(75 45 45 / 24%));
+}
+
+.bike-portrait {
+  width: min(220px, 45%);
+}
+
+.bike-portrait img {
+  aspect-ratio: 16 / 10;
+  object-fit: contain;
+  border-color: #ffe0a0;
+  background: linear-gradient(180deg, #f29b77, #ffd99b 60%, #42a9ad 61%);
+  box-shadow: 0 0 22px rgb(255 218 147 / 42%);
+}
+
+.bike-portrait figcaption {
+  color: #fff0d7;
+}
+
 .level-music {
   display: flex;
   align-items: center;
@@ -326,6 +366,42 @@ body.minecraft-level main.game-layout {
   grid-template-columns: 76px minmax(0, 660px) 150px;
 }
 
+body.beach-level {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 59px, rgb(255 241 206 / 7%) 60px 61px),
+    linear-gradient(155deg, #b65062, #f08b70 44%, #eab278 74%, #397b84);
+  color: #fff5df;
+}
+
+body.beach-level main.game-layout {
+  width: min(100%, 1010px);
+  grid-template-columns: 76px minmax(0, 660px) 150px;
+}
+
+body.beach-level .arena-header h1 {
+  color: #fff0bd;
+  text-shadow: 3px 3px #a74c5b;
+}
+
+body.beach-level .eyebrow,
+body.beach-level .edition-mark strong {
+  color: #ffe29c;
+}
+
+body.beach-level canvas {
+  border-color: #ffe0a0;
+  box-shadow: 0 18px 55px rgb(64 35 43 / 42%), 0 0 0 5px rgb(255 226 156 / 14%);
+}
+
+body.beach-level .controls-copy {
+  color: #fff0d7;
+}
+
+body.beach-level kbd {
+  border-color: #ffcf98;
+  background: rgb(147 71 79 / 52%);
+}
+
 body.minecraft-level .arena-header h1 {
   color: #b9ffff;
   text-shadow: 3px 3px #176c78;
@@ -362,7 +438,8 @@ body.minecraft-level kbd {
     grid-row: 1;
   }
 
-  .minecraft-character {
+  .minecraft-character,
+  .bike-character {
     grid-column: 2;
     grid-row: 2;
     width: 100%;
@@ -379,6 +456,11 @@ body.minecraft-level kbd {
   .steve-image {
     width: 92px;
     height: 190px;
+  }
+
+  .bike-image {
+    width: 130px;
+    height: 100px;
   }
 
   .life-rail {
@@ -420,6 +502,10 @@ body.minecraft-level kbd {
 
   .win-portrait {
     width: min(92px, 34%);
+  }
+
+  .bike-portrait {
+    width: min(150px, 55%);
   }
 
   .win-portrait figcaption {

@@ -109,6 +109,11 @@ function drawBricks() {
       continue;
     }
 
+    if (currentLevel === 3) {
+      drawBeachBrick(brick);
+      continue;
+    }
+
     const inset = 1;
     const gradient = ctx.createLinearGradient(brick.x, brick.y, brick.x, brick.y + brick.height);
     if (brick.powerup) {
@@ -141,6 +146,26 @@ function drawBricks() {
       ctx.arc(brick.x + brick.width / 2, brick.y + brick.height / 2, 2, 0, Math.PI * 2);
       ctx.fill();
     }
+  }
+}
+
+function drawBeachBrick(brick) {
+  const colors = brick.y < 78
+    ? ["#fff0b8", "#f29b66", "#c95c69"]
+    : brick.y < 105 ? ["#ffe0a0", "#ed765f", "#b64c62"]
+      : ["#9af0dc", "#38b5b6", "#167d91"];
+  const [highlight, face, shade] = colors;
+  ctx.fillStyle = shade;
+  ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+  ctx.fillStyle = face;
+  ctx.fillRect(brick.x + 2, brick.y + 2, brick.width - 4, brick.height - 4);
+  ctx.fillStyle = highlight;
+  ctx.fillRect(brick.x + 3, brick.y + 2, brick.width - 6, 3);
+  if (brick.powerup) {
+    ctx.fillStyle = "#fff7cf";
+    ctx.beginPath();
+    ctx.arc(brick.x + brick.width / 2, brick.y + brick.height / 2, 3, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 

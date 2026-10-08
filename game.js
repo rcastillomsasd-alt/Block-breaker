@@ -13,6 +13,7 @@ const gameOverlay = document.getElementById("game-overlay");
 const gameMessage = document.getElementById("game-message");
 const winPortrait = document.getElementById("win-portrait");
 const watermelonPortrait = document.getElementById("watermelon-portrait");
+const bikePortrait = document.getElementById("bike-portrait");
 const restartButton = document.getElementById("restart-button");
 const levelLabel = document.getElementById("level-label");
 const levelMusic = document.getElementById("level-music");
@@ -66,7 +67,7 @@ const paddle = {
   y: HEIGHT - 30,
   width: 90,
   height: 12,
-  speed: 6
+  speed: 7
 };
 
 
@@ -171,7 +172,8 @@ function finishGame(message) {
   gameMessage.textContent = message;
   winPortrait.hidden = !isWin || currentLevel !== 1;
   watermelonPortrait.hidden = !isWin || currentLevel !== 2;
-  restartButton.textContent = isWin && currentLevel === 1 ? "Next Level" : "Play Again";
+  bikePortrait.hidden = !isWin || currentLevel !== 3;
+  restartButton.textContent = isWin && currentLevel < 3 ? "Next Level" : "Play Again";
   gameOverlay.hidden = false;
 }
 
@@ -183,7 +185,7 @@ function resetGame() {
 }
 
 function startNextLevel() {
-  currentLevel = 2;
+  currentLevel++;
   reserveCount = STARTING_RESERVES;
   updateLevelTheme();
   resetLevelBoard();
@@ -200,8 +202,11 @@ function resetLevelBoard() {
 
 function updateLevelTheme() {
   const isMinecraftLevel = currentLevel === 2;
+  const isBeachLevel = currentLevel === 3;
   document.body.classList.toggle("minecraft-level", isMinecraftLevel);
+  document.body.classList.toggle("beach-level", isBeachLevel);
   document.getElementById("minecraft-character").hidden = !isMinecraftLevel;
+  document.getElementById("bike-character").hidden = !isBeachLevel;
   levelMusic.hidden = !isMinecraftLevel;
   if (!isMinecraftLevel) {
     minecraftAudio.pause();
@@ -209,12 +214,14 @@ function updateLevelTheme() {
   } else if (minecraftAudio.src) {
     minecraftAudio.play().catch(() => {});
   }
-  document.getElementById("edition-label").textContent = isMinecraftLevel ? "LEVEL" : "LEGEND";
-  levelLabel.textContent = isMinecraftLevel ? "02" : "23";
+  document.getElementById("edition-label").textContent = currentLevel === 1 ? "LEGEND" : "LEVEL";
+  levelLabel.textContent = currentLevel === 1 ? "23" : `0${currentLevel}`;
   document.getElementById("arena-eyebrow").textContent = isMinecraftLevel
     ? "VOXEL QUEST / DIAMOND ARMOR"
-    : "BASKETBALL ARCADE / 1990s EDITION";
-  document.querySelector(".arena-header h1").textContent = isMinecraftLevel ? "DIAMOND COURT" : "FULL COURT";
+    : isBeachLevel ? "COASTLINE RUN / ELECTRIC DIRTBIKE" : "BASKETBALL ARCADE / 1990s EDITION";
+  document.querySelector(".arena-header h1").textContent = isMinecraftLevel
+    ? "DIAMOND COURT"
+    : isBeachLevel ? "SUNSET SHORE" : "FULL COURT";
 }
 
 function movePaddle() {
@@ -255,6 +262,10 @@ function draw() {
 }
 
 function drawCourt() {
+  if (currentLevel === 3) {
+    drawBeachCourt();
+    return;
+  }
   if (currentLevel === 2) {
     drawMinecraftCourt();
     return;
@@ -326,6 +337,7 @@ function drawMinecraftCourt() {
         ctx.fillRect(x + 13, y - height - 12, 24, 13);
       }
     }
+
   }
 
   ctx.fillStyle = "#7e5839";
@@ -350,8 +362,89 @@ function drawMinecraftCourt() {
   ctx.fillRect(18, 18, WIDTH - 36, 3);
 }
 
+function drawBeachCourt() {
+  const sky = ctx.createLinearGradient(0, 0, 0, 260);
+  sky.addColorStop(0, "#e96b73");
+  sky.addColorStop(0.62, "#ffad78");
+  sky.addColorStop(1, "#ffe0a0");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  const sun = ctx.createRadialGradient(465, 146, 12, 465, 146, 68);
+  sun.addColorStop(0, "#fff4c2");
+  sun.addColorStop(1, "#ffd177");
+  ctx.fillStyle = sun;
+  ctx.beginPath();
+  ctx.arc(465, 146, 57, 0, Math.PI * 2);
+  ctx.fill();
+
+  const sea = ctx.createLinearGradient(0, 232, 0, 370);
+  sea.addColorStop(0, "#40b7bc");
+  sea.addColorStop(1, "#167d91");
+  ctx.fillStyle = sea;
+  ctx.fillRect(0, 232, WIDTH, 138);
+  for (let row = 0; row < 6; row++) {
+    const y = 250 + row * 20;
+    ctx.strokeStyle = row % 2 === 0 ? "rgb(225 255 226 / 42%)" : "rgb(255 214 161 / 40%)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = 0; x <= WIDTH; x += 36) {
+      const waveY = y + Math.sin((x + row * 24) / 38) * 3;
+      if (x === 0) ctx.moveTo(x, waveY);
+      else ctx.lineTo(x, waveY);
+    }
+    ctx.stroke();
+  }
+
+  const sand = ctx.createLinearGradient(0, 350, 0, HEIGHT);
+  sand.addColorStop(0, "#f0c17f");
+  sand.addColorStop(1, "#d68c61");
+  ctx.fillStyle = sand;
+  ctx.fillRect(0, 350, WIDTH, HEIGHT - 350);
+
+  ctx.fillStyle = "rgb(255 238 187 / 35%)";
+  ctx.beginPath();
+  ctx.moveTo(0, 350);
+  ctx.quadraticCurveTo(150, 330, 300, 350);
+  ctx.quadraticCurveTo(450, 368, WIDTH, 344);
+  ctx.lineTo(WIDTH, 365);
+  ctx.quadraticCurveTo(450, 386, 300, 368);
+  ctx.quadraticCurveTo(150, 348, 0, 370);
+  ctx.fill();
+
+  ctx.fillStyle = "rgb(56 54 48 / 65%)";
+  ctx.beginPath();
+  ctx.moveTo(18, 354);
+  ctx.quadraticCurveTo(50, 276, 88, 191);
+  ctx.lineTo(101, 196);
+  ctx.quadraticCurveTo(74, 286, 38, 360);
+  ctx.fill();
+  ctx.strokeStyle = "rgb(56 54 48 / 75%)";
+  ctx.lineWidth = 8;
+  for (const [endX, endY, curveX, curveY] of [[10, 171, 40, 190], [80, 154, 79, 180], [133, 185, 105, 195], [54, 151, 55, 176]]) {
+    ctx.beginPath();
+    ctx.moveTo(91, 196);
+    ctx.quadraticCurveTo(curveX, curveY, endX, endY);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = "rgb(255 244 211 / 34%)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(18, 18, WIDTH - 36, HEIGHT - 36);
+}
+
 function drawPaddle() {
   ctx.save();
+  if (currentLevel === 3) {
+    ctx.shadowColor = "rgb(255 247 199 / 68%)";
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = "#f37963";
+    ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+    ctx.fillStyle = "#fff0bf";
+    ctx.fillRect(paddle.x + 2, paddle.y + 2, paddle.width - 4, 3);
+    ctx.restore();
+    return;
+  }
   if (currentLevel === 2) {
     ctx.shadowColor = "rgb(66 245 245 / 48%)";
     ctx.shadowBlur = 14;
@@ -473,7 +566,7 @@ function start() {
 }
 
 restartButton.addEventListener("click", function () {
-  if (gameState === "won" && currentLevel === 1) {
+  if (gameState === "won" && currentLevel < 3) {
     startNextLevel();
     return;
   }
