@@ -143,9 +143,16 @@ function update() {
     if (hitBrick) {
       score += 100;
       updateScore();
-      if (hitBrick.powerup) {
+      if (hitBrick.powerup === "invert") {
         isUpsideDown = true;
         flipIndicator.hidden = false;
+      } else if (hitBrick.powerup === "multiball") {
+        balls.push(makeBall(
+          hitBrick.x + hitBrick.width / 2 - BALL_SIZE / 2,
+          hitBrick.y + hitBrick.height / 2 - BALL_SIZE / 2,
+          -BALL_SPEED,
+          -BALL_SPEED
+        ));
       }
     }
 

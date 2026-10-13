@@ -36,13 +36,17 @@ function makeBricks(level = 1) {
     }
   }
 
-  return markOptionalPowerup(list);
+  return markOptionalPowerups(list);
 }
 
-function markOptionalPowerup(bricks, candidates = bricks) {
-  const brick = candidates[Math.floor(Math.random() * candidates.length)];
-  brick.powerup = true;
-  brick.optional = true;
+function markOptionalPowerups(bricks, candidates = bricks) {
+  const available = [...candidates];
+  for (const powerup of ["invert", "multiball"]) {
+    const index = Math.floor(Math.random() * available.length);
+    const [brick] = available.splice(index, 1);
+    brick.powerup = powerup;
+    brick.optional = true;
+  }
   return bricks;
 }
 
@@ -90,7 +94,7 @@ function makeSwordBricks() {
     };
     return brick;
   });
-  return markOptionalPowerup(bricks, bricks.filter(brick => brick.material === "diamond"));
+  return markOptionalPowerups(bricks, bricks.filter(brick => brick.material === "diamond"));
 }
 
 function makeBikeBricks() {
@@ -144,7 +148,7 @@ function makeBikeBricks() {
       part
     });
   }
-  return markOptionalPowerup(bricks);
+  return markOptionalPowerups(bricks);
 }
 
 // Draws every brick in the list.
@@ -162,7 +166,13 @@ function drawBricks() {
 
     const inset = 1;
     const gradient = ctx.createLinearGradient(brick.x, brick.y, brick.x, brick.y + brick.height);
-    if (brick.powerup) {
+    if (brick.powerup === "invert") {
+      gradient.addColorStop(0, "#f3c6ff");
+      gradient.addColorStop(0.18, "#a342d5");
+      gradient.addColorStop(1, "#542079");
+      ctx.shadowColor = "rgb(163 66 213 / 70%)";
+      ctx.shadowBlur = 10;
+    } else if (brick.powerup === "multiball") {
       gradient.addColorStop(0, "#8bd8ff");
       gradient.addColorStop(0.18, "#168bff");
       gradient.addColorStop(1, "#0753b5");
@@ -179,7 +189,9 @@ function drawBricks() {
     ctx.fillStyle = gradient;
     ctx.fillRect(brick.x + inset, brick.y + inset, brick.width - inset * 2, brick.height - inset * 2);
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = brick.powerup ? "#9ee4ff" : "#ff9999";
+    ctx.strokeStyle = brick.powerup === "invert"
+      ? "#f3c6ff"
+      : brick.powerup === "multiball" ? "#9ee4ff" : "#ff9999";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(brick.x + 3, brick.y + 2);
@@ -197,12 +209,17 @@ function drawBricks() {
 
 function drawBeachBrick(brick) {
   if (brick.part) {
-    const colors = {
+    const partColors = {
       wheel: ["#707677", "#30383a", "#151b1e"],
       hub: ["#fff2c2", "#f5bd62", "#9d573f"],
       frame: ["#ffd191", "#ef5d68", "#912f50"],
       body: ["#b5fff0", "#27a7a7", "#126b77"]
     }[brick.part];
+    const powerupColors = {
+      invert: ["#f3c6ff", "#a342d5", "#542079"],
+      multiball: ["#a8f0ff", "#168bff", "#0753b5"]
+    };
+    const colors = powerupColors[brick.powerup] || partColors;
     const [highlight, face, shade] = colors;
     ctx.fillStyle = shade;
     ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
@@ -210,7 +227,14 @@ function drawBeachBrick(brick) {
     ctx.fillRect(brick.x + 2, brick.y + 2, brick.width - 4, brick.height - 4);
     ctx.fillStyle = highlight;
     ctx.fillRect(brick.x + 3, brick.y + 2, brick.width - 6, 3);
-    if (brick.powerup) {
+    if (brick.powerup === "multiball") {
+      ctx.fillStyle = "#fff";
+      for (const offset of [-4, 0, 4]) {
+        ctx.beginPath();
+        ctx.arc(brick.x + brick.width / 2 + offset, brick.y + brick.height / 2, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (brick.powerup === "invert") {
       ctx.fillStyle = "#fff7cf";
       ctx.fillRect(brick.x + brick.width / 2 - 2, brick.y + brick.height / 2 - 2, 4, 4);
     }
@@ -228,7 +252,14 @@ function drawBeachBrick(brick) {
   ctx.fillRect(brick.x + 2, brick.y + 2, brick.width - 4, brick.height - 4);
   ctx.fillStyle = highlight;
   ctx.fillRect(brick.x + 3, brick.y + 2, brick.width - 6, 3);
-  if (brick.powerup) {
+  if (brick.powerup === "multiball") {
+    ctx.fillStyle = "#fff";
+    for (const offset of [-4, 0, 4]) {
+      ctx.beginPath();
+      ctx.arc(brick.x + brick.width / 2 + offset, brick.y + brick.height / 2, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (brick.powerup === "invert") {
     ctx.fillStyle = "#fff7cf";
     ctx.beginPath();
     ctx.arc(brick.x + brick.width / 2, brick.y + brick.height / 2, 3, 0, Math.PI * 2);
@@ -238,9 +269,11 @@ function drawBeachBrick(brick) {
 
 function drawSwordBrick(brick) {
   const palette = {
-    diamond: brick.powerup
-      ? ["#d9ffff", "#67e8ed", "#1592a8"]
-      : ["#b7ffff", "#49cbd5", "#177f91"],
+    diamond: brick.powerup === "invert"
+      ? ["#f3c6ff", "#a342d5", "#542079"]
+      : brick.powerup === "multiball"
+        ? ["#a8f0ff", "#168bff", "#0753b5"]
+        : ["#b7ffff", "#49cbd5", "#177f91"],
     guard: ["#fff1a5", "#d59a35", "#805021"],
     handle: ["#bb8153", "#70462f", "#3d2b29"],
     pommel: ["#e0ad69", "#94633e", "#533a30"]
@@ -255,8 +288,13 @@ function drawSwordBrick(brick) {
   ctx.fillRect(brick.x + 3, brick.y + 2, brick.width - 9, 3);
   ctx.fillStyle = "rgb(255 255 255 / 22%)";
   ctx.fillRect(brick.x + 4, brick.y + 6, 3, brick.height - 10);
-  if (brick.powerup) {
-    ctx.fillStyle = "#f1ffff";
+  if (brick.powerup === "multiball") {
+    ctx.fillStyle = "#fff";
+    for (const offset of [0, 5, 10]) {
+      ctx.fillRect(brick.x + brick.width - 14 + offset, brick.y + 6, 3, 3);
+    }
+  } else if (brick.powerup === "invert") {
+    ctx.fillStyle = "#fff7cf";
     ctx.fillRect(brick.x + brick.width - 11, brick.y + 5, 4, 4);
   }
 }
