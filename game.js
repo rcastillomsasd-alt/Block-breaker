@@ -16,6 +16,9 @@ const watermelonPortrait = document.getElementById("watermelon-portrait");
 const bikePortrait = document.getElementById("bike-portrait");
 const restartButton = document.getElementById("restart-button");
 const levelLabel = document.getElementById("level-label");
+const scoreDisplay = document.getElementById("score-display");
+const scoreValue = document.getElementById("score-value");
+const flipIndicator = document.getElementById("flip-indicator");
 const levelMusic = document.getElementById("level-music");
 const minecraftTrackInput = document.getElementById("minecraft-track");
 const minecraftAudio = document.getElementById("minecraft-audio");
@@ -42,6 +45,8 @@ let balls = [];
 let reserveCount = STARTING_RESERVES;
 let gameState = "playing";
 let currentLevel = 1;
+let score = 0;
+let isUpsideDown = false;
 let minecraftTrackUrl = null;
 
 function makeBall(x, y, vx, vy, isStarter = false) {
@@ -95,6 +100,12 @@ document.addEventListener("keyup", function (event) {
   keys[event.key.toLowerCase()] = false;
 });
 
+window.addEventListener("blur", function () {
+  for (const key of Object.keys(keys)) {
+    keys[key] = false;
+  }
+});
+
 minecraftTrackInput.addEventListener("change", function () {
   const track = minecraftTrackInput.files[0];
   if (!track) {
@@ -129,13 +140,13 @@ function update() {
     bounceOffPaddle(activeBall);  // collisions.js
     const hitBrick = bounceOffBricks(activeBall);  // collisions.js
 
-    if (hitBrick && hitBrick.powerup) {
-      balls.push(makeBall(
-        hitBrick.x + hitBrick.width / 2 - BALL_SIZE / 2,
-        hitBrick.y + hitBrick.height / 2 - BALL_SIZE / 2,
-        -BALL_SPEED,
-        -BALL_SPEED
-      ));
+    if (hitBrick) {
+      score += 100;
+      updateScore();
+      if (hitBrick.powerup) {
+        isUpsideDown = true;
+        flipIndicator.hidden = false;
+      }
     }
 
     if (activeBall.y > HEIGHT) {
@@ -152,9 +163,14 @@ function update() {
     }
   }
 
-  if (bricks.length === 0) {
+  if (gameState === "playing" && bricks.every(brick => brick.optional)) {
     finishGame("You Win!");
   }
+}
+
+function updateScore() {
+  scoreValue.textContent = score.toLocaleString();
+  scoreDisplay.setAttribute("aria-label", `Score: ${score}`);
 }
 
 function updateReserveHolder() {
@@ -180,6 +196,8 @@ function finishGame(message) {
 function resetGame() {
   currentLevel = 1;
   reserveCount = STARTING_RESERVES;
+  score = 0;
+  updateScore();
   updateLevelTheme();
   resetLevelBoard();
 }
@@ -194,6 +212,8 @@ function startNextLevel() {
 function resetLevelBoard() {
   bricks = makeBricks(currentLevel);
   balls = [makeStarterBall()];
+  isUpsideDown = false;
+  flipIndicator.hidden = true;
   paddle.x = WIDTH / 2 - paddle.width / 2;
   gameState = "playing";
   gameOverlay.hidden = true;
@@ -225,12 +245,14 @@ function updateLevelTheme() {
 }
 
 function movePaddle() {
+  let direction = 0;
   if (keys["arrowleft"] || keys["a"]) {
-    paddle.x = paddle.x - paddle.speed;
+    direction--;
   }
   if (keys["arrowright"] || keys["d"]) {
-    paddle.x = paddle.x + paddle.speed;
+    direction++;
   }
+  paddle.x += direction * paddle.speed * (isUpsideDown ? -1 : 1);
 
   // Keep the paddle on the screen.
   if (paddle.x < 0) {
@@ -252,6 +274,11 @@ function moveBall(activeBall) {
 // white shapes.
 // ------------------------------------------------------------
 function draw() {
+  ctx.save();
+  if (isUpsideDown) {
+    ctx.translate(WIDTH, HEIGHT);
+    ctx.rotate(Math.PI);
+  }
   drawCourt();
   drawPaddle();
   for (const activeBall of balls) {
@@ -259,6 +286,7 @@ function draw() {
   }
 
   drawBricks();  // bricks.js
+  ctx.restore();
 }
 
 function drawCourt() {

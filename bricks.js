@@ -8,13 +8,15 @@ const BRICK_WIDTH = 60;
 const BRICK_HEIGHT = 20;
 const BRICK_GAP = 6;     // empty space between bricks
 const BRICKS_TOP = 50;   // how far down the first row starts
-const POWERUP_BRICK_COUNT = 3;
 
 // Builds the list of bricks. Each brick is an object with an
 // x, y, width, and height.
 function makeBricks(level = 1) {
   if (level === 2) {
     return makeSwordBricks();
+  }
+  if (level === 3) {
+    return makeBikeBricks();
   }
 
   const list = [];
@@ -34,15 +36,14 @@ function makeBricks(level = 1) {
     }
   }
 
-  const powerupIndices = new Set();
-  while (powerupIndices.size < POWERUP_BRICK_COUNT) {
-    powerupIndices.add(Math.floor(Math.random() * list.length));
-  }
-  for (const index of powerupIndices) {
-    list[index].powerup = true;
-  }
+  return markOptionalPowerup(list);
+}
 
-  return list;
+function markOptionalPowerup(bricks, candidates = bricks) {
+  const brick = candidates[Math.floor(Math.random() * candidates.length)];
+  brick.powerup = true;
+  brick.optional = true;
+  return bricks;
 }
 
 function makeSwordBricks() {
@@ -79,13 +80,7 @@ function makeSwordBricks() {
     tiles.push({ col, row: 9, material: "pommel" });
   }
 
-  const diamondTiles = tiles.filter(tile => tile.material === "diamond");
-  const powerupIndices = new Set();
-  while (powerupIndices.size < POWERUP_BRICK_COUNT) {
-    powerupIndices.add(Math.floor(Math.random() * diamondTiles.length));
-  }
-
-  return tiles.map((tile, index) => {
+  const bricks = tiles.map(tile => {
     const brick = {
       x: left + tile.col * (tileWidth + gap),
       y: 42 + tile.row * (tileHeight + gap),
@@ -93,12 +88,63 @@ function makeSwordBricks() {
       height: tileHeight,
       material: tile.material
     };
-    const diamondIndex = diamondTiles.indexOf(tile);
-    if (tile.material === "diamond" && powerupIndices.has(diamondIndex)) {
-      brick.powerup = true;
-    }
     return brick;
   });
+  return markOptionalPowerup(bricks, bricks.filter(brick => brick.material === "diamond"));
+}
+
+function makeBikeBricks() {
+  const tileWidth = 27;
+  const tileHeight = 18;
+  const gap = 2;
+  const columns = 20;
+  const left = (WIDTH - columns * (tileWidth + gap) + gap) / 2;
+  const top = 95;
+  const tiles = new Map();
+  const addTile = (col, row, part) => {
+    const key = `${col},${row}`;
+    if (!tiles.has(key) || tiles.get(key) !== "wheel") {
+      tiles.set(key, part);
+    }
+  };
+  const wheelShape = [
+    [-1, -3], [0, -3], [1, -3], [-2, -2], [2, -2],
+    [-3, -1], [3, -1], [-3, 0], [3, 0], [-3, 1], [3, 1],
+    [-2, 2], [2, 2], [-1, 3], [0, 3], [1, 3]
+  ];
+
+  for (const [centerCol, centerRow] of [[3, 7], [16, 7]]) {
+    for (const [colOffset, rowOffset] of wheelShape) {
+      addTile(centerCol + colOffset, centerRow + rowOffset, "wheel");
+    }
+    addTile(centerCol, centerRow, "hub");
+  }
+
+  for (const [col, row] of [
+    [4, 6], [5, 5], [6, 4], [7, 3], [8, 4], [9, 5], [10, 6], [10, 7],
+    [9, 7], [8, 7], [7, 7], [6, 7], [5, 7], [4, 7],
+    [8, 3], [9, 3], [10, 3], [11, 3], [12, 3], [13, 3],
+    [12, 4], [11, 5], [14, 4], [15, 5], [16, 6],
+    [7, 2], [7, 1], [5, 1], [6, 1], [13, 2], [14, 2], [15, 2]
+  ]) {
+    addTile(col, row, "frame");
+  }
+  for (const [col, row] of [[9, 4], [10, 4], [11, 4], [10, 5]]) {
+    addTile(col, row, "body");
+  }
+
+  const bricks = [];
+  for (const [position, part] of tiles) {
+    const [col, row] = position.split(",").map(Number);
+    bricks.push({
+      x: left + col * (tileWidth + gap),
+      y: top + row * (tileHeight + gap),
+      width: tileWidth,
+      height: tileHeight,
+      part
+    });
+  }
+  return markOptionalPowerup(bricks);
 }
 
 // Draws every brick in the list.
@@ -150,6 +196,27 @@ function drawBricks() {
 }
 
 function drawBeachBrick(brick) {
+  if (brick.part) {
+    const colors = {
+      wheel: ["#707677", "#30383a", "#151b1e"],
+      hub: ["#fff2c2", "#f5bd62", "#9d573f"],
+      frame: ["#ffd191", "#ef5d68", "#912f50"],
+      body: ["#b5fff0", "#27a7a7", "#126b77"]
+    }[brick.part];
+    const [highlight, face, shade] = colors;
+    ctx.fillStyle = shade;
+    ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+    ctx.fillStyle = face;
+    ctx.fillRect(brick.x + 2, brick.y + 2, brick.width - 4, brick.height - 4);
+    ctx.fillStyle = highlight;
+    ctx.fillRect(brick.x + 3, brick.y + 2, brick.width - 6, 3);
+    if (brick.powerup) {
+      ctx.fillStyle = "#fff7cf";
+      ctx.fillRect(brick.x + brick.width / 2 - 2, brick.y + brick.height / 2 - 2, 4, 4);
+    }
+    return;
+  }
+
   const colors = brick.y < 78
     ? ["#fff0b8", "#f29b66", "#c95c69"]
     : brick.y < 105 ? ["#ffe0a0", "#ed765f", "#b64c62"]

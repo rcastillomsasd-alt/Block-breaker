@@ -140,6 +140,43 @@ main.game-layout {
   position: relative;
 }
 
+.score-display,
+.flip-indicator {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  margin: 0;
+  padding: 6px 9px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  background: rgb(13 15 18 / 78%);
+  color: #fff;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+.score-display {
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-display span {
+  color: #ffd191;
+}
+
+.score-display strong {
+  font-size: 13px;
+}
+
+.flip-indicator {
+  right: 12px;
+  border-color: #8de9ef;
+  color: #b9ffff;
+}
+
 canvas {
   display: block;
   width: 100%;
@@ -172,6 +209,7 @@ kbd {
 
 .game-overlay {
   position: absolute;
+  z-index: 2;
   inset: 2px;
   display: flex;
   flex-direction: column;
@@ -319,7 +357,7 @@ kbd {
   object-fit: contain;
   border-color: #ffe0a0;
   background: linear-gradient(180deg, #f29b77, #ffd99b 60%, #42a9ad 61%);
-  mix-blend-mode: multiply;
+  filter: brightness(1.25) saturate(1.08);
   box-shadow: 0 0 22px rgb(255 218 147 / 42%);
 }
 
@@ -492,6 +530,12 @@ body.minecraft-level kbd {
 
   .arena-header {
     padding-bottom: 10px;
+  }
+
+  .flip-indicator {
+    top: 44px;
+    right: 8px;
+    font-size: 8px;
   }
 
   .arena-header h1 {

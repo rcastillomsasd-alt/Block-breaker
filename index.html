@@ -31,6 +31,10 @@
       </header>
       <div class="canvas-shell">
         <canvas id="game" width="600" height="450" aria-label="Block Breaker game"></canvas>
+        <p class="score-display" id="score-display" aria-label="Score: 0">
+          <span>SCORE</span><strong id="score-value">0</strong>
+        </p>
+        <p class="flip-indicator" id="flip-indicator" hidden>CONTROLS REVERSED</p>
         <div class="game-overlay" id="game-overlay" hidden aria-live="polite">
           <h1 id="game-message"></h1>
           <figure class="win-portrait" id="win-portrait" hidden>
