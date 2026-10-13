@@ -19,6 +19,8 @@ const levelLabel = document.getElementById("level-label");
 const scoreDisplay = document.getElementById("score-display");
 const scoreValue = document.getElementById("score-value");
 const flipIndicator = document.getElementById("flip-indicator");
+const adminPanel = document.getElementById("admin-panel");
+const adminLevelButtons = document.querySelectorAll(".admin-level-button");
 const levelMusic = document.getElementById("level-music");
 const minecraftTrackInput = document.getElementById("minecraft-track");
 const minecraftAudio = document.getElementById("minecraft-audio");
@@ -47,6 +49,7 @@ let gameState = "playing";
 let currentLevel = 1;
 let score = 0;
 let isUpsideDown = false;
+let adminKeyBuffer = "";
 let minecraftTrackUrl = null;
 
 function makeBall(x, y, vx, vy, isStarter = false) {
@@ -88,8 +91,44 @@ let bricks = [];
 // ------------------------------------------------------------
 const keys = {};
 
+function trackAdminSequence(key) {
+  const candidate = adminKeyBuffer + key;
+  if (candidate.endsWith("admin")) {
+    adminKeyBuffer = "";
+    toggleAdminPanel();
+    return true;
+  }
+
+  adminKeyBuffer = ["admi", "adm", "ad", "a"].find(prefix => candidate.endsWith(prefix)) || "";
+  return adminKeyBuffer.length > 0;
+}
+
+function toggleAdminPanel() {
+  adminPanel.hidden = !adminPanel.hidden;
+  document.body.classList.toggle("admin-open", !adminPanel.hidden);
+}
+
+function adminTeleportToLevel(level) {
+  if (!Number.isInteger(level) || level < 1 || level > 3) {
+    return;
+  }
+
+  currentLevel = level;
+  reserveCount = STARTING_RESERVES;
+  updateLevelTheme();
+  resetLevelBoard();
+}
+
+adminLevelButtons.forEach(button => {
+  button.addEventListener("click", function () {
+    adminTeleportToLevel(Number(button.dataset.adminLevel));
+  });
+});
+
 document.addEventListener("keydown", function (event) {
-  keys[event.key.toLowerCase()] = true;
+  const key = event.key.toLowerCase();
+  const enteringAdminSequence = key.length === 1 && trackAdminSequence(key);
+  keys[key] = !(enteringAdminSequence && (key === "a" || key === "d"));
   // Stop the arrow keys from scrolling the page.
   if (event.key.startsWith("Arrow")) {
     event.preventDefault();
@@ -101,6 +140,7 @@ document.addEventListener("keyup", function (event) {
 });
 
 window.addEventListener("blur", function () {
+  adminKeyBuffer = "";
   for (const key of Object.keys(keys)) {
     keys[key] = false;
   }

@@ -41,7 +41,7 @@ function makeBricks(level = 1) {
 
 function markOptionalPowerups(bricks, candidates = bricks) {
   const available = [...candidates];
-  for (const powerup of ["invert", "multiball"]) {
+  for (const powerup of ["invert", "multiball", "multiball", "multiball"]) {
     const index = Math.floor(Math.random() * available.length);
     const [brick] = available.splice(index, 1);
     brick.powerup = powerup;
