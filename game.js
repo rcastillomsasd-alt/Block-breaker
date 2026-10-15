@@ -58,10 +58,10 @@ function makeBall(x, y, vx, vy, isStarter = false) {
 
 function makeStarterBall() {
   return makeBall(
-    WIDTH / 2 - BALL_SIZE / 2,
-    HEIGHT / 2 - BALL_SIZE / 2,
-    BALL_SPEED,
-    BALL_SPEED,
+    paddle.x + paddle.width / 2 - BALL_SIZE / 2,
+    paddle.y - BALL_SIZE,
+    0,
+    0,
     true
   );
 }
@@ -127,6 +127,17 @@ adminLevelButtons.forEach(button => {
 
 document.addEventListener("keydown", function (event) {
   const key = event.key.toLowerCase();
+  if (event.code === "Space") {
+    event.preventDefault();
+    if (!event.repeat && gameState === "playing") {
+      const starterBall = balls.find(ball => ball.isStarter && ball.vx === 0 && ball.vy === 0);
+      if (starterBall) {
+        starterBall.vx = BALL_SPEED;
+        starterBall.vy = -BALL_SPEED;
+      }
+    }
+  }
+
   const enteringAdminSequence = key.length === 1 && trackAdminSequence(key);
   keys[key] = !(enteringAdminSequence && (key === "a" || key === "d"));
   // Stop the arrow keys from scrolling the page.
@@ -174,6 +185,12 @@ function update() {
 
   for (let index = balls.length - 1; index >= 0; index--) {
     const activeBall = balls[index];
+    if (activeBall.isStarter && activeBall.vx === 0 && activeBall.vy === 0) {
+      activeBall.x = paddle.x + paddle.width / 2 - activeBall.width / 2;
+      activeBall.y = paddle.y - activeBall.height;
+      continue;
+    }
+
     moveBall(activeBall);
 
     bounceOffWalls(activeBall);   // collisions.js
