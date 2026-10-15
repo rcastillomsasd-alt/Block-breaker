@@ -75,7 +75,8 @@ const paddle = {
   y: HEIGHT - 30,
   width: 90,
   height: 12,
-  speed: 7
+  speed: 7,
+  movement: 0
 };
 
 
@@ -132,7 +133,7 @@ document.addEventListener("keydown", function (event) {
     if (!event.repeat && gameState === "playing") {
       const starterBall = balls.find(ball => ball.isStarter && ball.vx === 0 && ball.vy === 0);
       if (starterBall) {
-        starterBall.vx = BALL_SPEED;
+        starterBall.vx = Math.sign(paddle.movement) * BALL_SPEED;
         starterBall.vy = -BALL_SPEED;
       }
     }
@@ -309,6 +310,7 @@ function updateLevelTheme() {
 }
 
 function movePaddle() {
+  const previousX = paddle.x;
   let direction = 0;
   if (keys["arrowleft"] || keys["a"]) {
     direction--;
@@ -325,6 +327,7 @@ function movePaddle() {
   if (paddle.x + paddle.width > WIDTH) {
     paddle.x = WIDTH - paddle.width;
   }
+  paddle.movement = paddle.x - previousX;
 }
 
 function moveBall(activeBall) {
