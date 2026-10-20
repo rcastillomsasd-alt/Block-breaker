@@ -27,6 +27,16 @@ const minecraftAudio = document.getElementById("minecraft-audio");
 const comboDisplay = document.getElementById("combo-display");
 const achievementCount = document.getElementById("achievement-count");
 const achievementToast = document.getElementById("achievement-toast");
+const titleScreen = document.getElementById("title-screen");
+const menuCoinCount = document.getElementById("menu-coin-count");
+const coinCount = document.getElementById("coin-count");
+const menuPages = document.querySelectorAll(".menu-page");
+const caseReveal = document.getElementById("case-reveal");
+const caseRarity = document.getElementById("case-rarity");
+const caseItemName = document.getElementById("case-item-name");
+const caseMessage = document.getElementById("case-message");
+const openCaseButton = document.getElementById("open-case-button");
+const caseInventory = document.getElementById("case-inventory");
 
 const WIDTH = 600;
 const HEIGHT = 450;
@@ -48,7 +58,7 @@ const STARTING_RESERVES = 4;
 
 let balls = [];
 let reserveCount = STARTING_RESERVES;
-let gameState = "playing";
+let gameState = "menu";
 let currentLevel = 1;
 let score = 0;
 let isUpsideDown = false;
@@ -59,6 +69,9 @@ let comboStreak = 0;
 let levelStartedAt = null;
 let levelStartReserveCount = STARTING_RESERVES;
 let achievementToastUntil = 0;
+let coins = 0;
+let caseDrops = [];
+let caseIsOpening = false;
 
 const ACHIEVEMENTS = [
   { id: "speed-run", title: "Quick Finish" },
@@ -66,7 +79,15 @@ const ACHIEVEMENTS = [
   { id: "clean-sweep", title: "Clean Sweep" }
 ];
 const ACHIEVEMENT_STORAGE_KEY = "block-breaker-achievements";
+const ECONOMY_STORAGE_KEY = "block-breaker-economy";
+const CASE_COST = 100;
 let unlockedAchievements = new Set();
+const CASE_TIERS = [
+  { id: "grey", label: "GREY", weight: 60, items: ["Court Classic", "Rookie Stripe", "Concrete Fade"] },
+  { id: "blue", label: "BLUE", weight: 30, items: ["Fast Break", "Neon Cross", "Skyline Slam"] },
+  { id: "purple", label: "PURPLE", weight: 15, items: ["Night League", "Royal Rumble", "Violet Voltage"] },
+  { id: "gold", label: "GOLD", weight: 3, items: ["Golden Legend", "Championship Glow", "Crown Jewel"] }
+];
 
 function updateAchievementList() {
   document.querySelectorAll("[data-achievement-status]").forEach(status => {
@@ -110,6 +131,147 @@ function loadAchievements() {
   }
   updateAchievementList();
 }
+
+function updateCoinDisplay() {
+  menuCoinCount.textContent = coins.toLocaleString();
+  coinCount.textContent = coins.toLocaleString();
+}
+
+function saveEconomy() {
+  try {
+    localStorage.setItem(ECONOMY_STORAGE_KEY, JSON.stringify({ coins, caseDrops }));
+  } catch {
+    caseMessage.textContent = "Save unavailable in this browser session.";
+  }
+}
+
+function loadEconomy() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ECONOMY_STORAGE_KEY) || "{}");
+    coins = Number.isSafeInteger(saved.coins) && saved.coins >= 0 ? saved.coins : 0;
+    caseDrops = Array.isArray(saved.caseDrops)
+      ? saved.caseDrops.filter(drop => drop && CASE_TIERS.some(tier => tier.id === drop.tier && tier.items.includes(drop.name)))
+      : [];
+  } catch {
+    coins = 0;
+    caseDrops = [];
+  }
+  updateCoinDisplay();
+  renderCaseInventory();
+}
+
+function renderCaseInventory() {
+  caseInventory.replaceChildren();
+  if (caseDrops.length === 0) {
+    const emptyMessage = document.createElement("li");
+    emptyMessage.className = "inventory-empty";
+    emptyMessage.textContent = "No drops yet";
+    caseInventory.append(emptyMessage);
+    return;
+  }
+
+  for (const drop of caseDrops) {
+    const item = document.createElement("li");
+    item.className = `inventory-item rarity-${drop.tier}`;
+    const rarity = document.createElement("span");
+    rarity.textContent = drop.tier.toUpperCase();
+    const name = document.createElement("strong");
+    name.textContent = drop.name;
+    item.append(rarity, name);
+    caseInventory.append(item);
+  }
+}
+
+function chooseCaseTier() {
+  let roll = Math.random() * CASE_TIERS.reduce((total, tier) => total + tier.weight, 0);
+  for (const tier of CASE_TIERS) {
+    roll -= tier.weight;
+    if (roll < 0) {
+      return tier;
+    }
+  }
+  return CASE_TIERS[0];
+}
+
+function openCase() {
+  if (caseIsOpening) {
+    return;
+  }
+  if (coins < CASE_COST) {
+    caseMessage.textContent = `You need ${CASE_COST - coins} more coins to open a case.`;
+    return;
+  }
+
+  coins -= CASE_COST;
+  saveEconomy();
+  updateCoinDisplay();
+  caseIsOpening = true;
+  openCaseButton.disabled = true;
+  caseMessage.textContent = "The case is opening...";
+  caseReveal.classList.add("is-spinning");
+
+  const rewardTier = chooseCaseTier();
+  const rewardName = rewardTier.items[Math.floor(Math.random() * rewardTier.items.length)];
+  caseDrops.unshift({ tier: rewardTier.id, name: rewardName });
+  saveEconomy();
+  let spin = 0;
+  const spinTimer = window.setInterval(() => {
+    const previewTier = CASE_TIERS[spin % CASE_TIERS.length];
+    const previewName = previewTier.items[spin % previewTier.items.length];
+    caseReveal.dataset.tier = previewTier.id;
+    caseRarity.textContent = previewTier.label;
+    caseItemName.textContent = previewName;
+    spin++;
+
+    if (spin >= 18) {
+      window.clearInterval(spinTimer);
+      caseReveal.classList.remove("is-spinning");
+      caseReveal.dataset.tier = rewardTier.id;
+      caseRarity.textContent = rewardTier.label;
+      caseItemName.textContent = rewardName;
+      renderCaseInventory();
+      caseMessage.textContent = `${rewardTier.label} DROP ADDED TO YOUR COLLECTION`;
+      caseIsOpening = false;
+      openCaseButton.disabled = false;
+    }
+  }, 75);
+}
+
+function showMenuPage(pageId) {
+  menuPages.forEach(page => {
+    page.hidden = page.id !== pageId;
+  });
+}
+
+document.getElementById("play-button").addEventListener("click", function () {
+  resetGame();
+  titleScreen.hidden = true;
+});
+
+document.getElementById("achievements-button").addEventListener("click", function () {
+  showMenuPage("achievements-page");
+});
+
+document.getElementById("cases-button").addEventListener("click", function () {
+  caseMessage.textContent = "Earn 1 coin for every brick you break.";
+  showMenuPage("cases-page");
+});
+
+document.querySelectorAll(".menu-back-button").forEach(button => {
+  button.addEventListener("click", function () {
+    showMenuPage("home-page");
+  });
+});
+
+openCaseButton.addEventListener("click", openCase);
+
+document.getElementById("menu-button").addEventListener("click", function () {
+  gameState = "menu";
+  gameOverlay.hidden = true;
+  titleScreen.hidden = false;
+  minecraftAudio.pause();
+  showMenuPage("home-page");
+});
 
 function makeBall(x, y, vx, vy, isStarter = false) {
   return { x, y, width: BALL_SIZE, height: BALL_SIZE, vx, vy, isStarter };
@@ -276,7 +438,10 @@ function update() {
       comboStreak++;
       const multiplier = Math.min(5, 1 + Math.floor((comboStreak - 1) / 3));
       score += 100 * multiplier;
+      coins++;
       updateScore();
+      updateCoinDisplay();
+      saveEconomy();
       updateComboDisplay(multiplier);
       spawnBrickBurst(hitBrick);
       if (multiplier === 5) {
@@ -808,7 +973,11 @@ function frame(now) {
 
 function start() {
   loadAchievements();
+  loadEconomy();
   resetGame();
+  gameState = "menu";
+  titleScreen.hidden = false;
+  showMenuPage("home-page");
   lastTime = performance.now();
   requestAnimationFrame(frame);
 }

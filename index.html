@@ -34,6 +34,7 @@
         <p class="score-display" id="score-display" aria-label="Score: 0">
           <span>SCORE</span><strong id="score-value">0</strong>
         </p>
+        <p class="coin-display"><span>COINS</span><strong id="coin-count">0</strong></p>
         <p class="combo-display" id="combo-display" hidden></p>
         <p class="flip-indicator" id="flip-indicator" hidden>CONTROLS REVERSED</p>
         <p class="achievement-toast" id="achievement-toast" role="status" aria-live="polite" hidden></p>
@@ -60,17 +61,10 @@
             <figcaption>Sur-Ron Light Bee X photo from <a href="https://surronebikeusa.com/product/surron-light-bee-x/">Surron eBike USA</a>.</figcaption>
           </figure>
           <button id="restart-button" type="button">Play again</button>
+          <button id="menu-button" class="menu-return-button" type="button">Main menu</button>
         </div>
       </div>
       <p class="controls-copy">MOVE WITH <kbd>←</kbd> <kbd>→</kbd> OR <kbd>A</kbd> <kbd>D</kbd><br>PRESS <kbd>SPACE</kbd> TO LAUNCH</p>
-      <details class="achievement-tracker">
-        <summary>ACHIEVEMENTS <span id="achievement-count">0/3</span></summary>
-        <ul>
-          <li><span>Quick Finish: clear a level in 30 seconds</span><strong data-achievement-status="speed-run">LOCKED</strong></li>
-          <li><span>On Fire: reach a x5 combo</span><strong data-achievement-status="hot-streak">LOCKED</strong></li>
-          <li><span>Clean Sweep: clear a level without losing a ball</span><strong data-achievement-status="clean-sweep">LOCKED</strong></li>
-        </ul>
-      </details>
       <div class="level-music" id="level-music" hidden>
         <label for="minecraft-track">MICE ON VENUS</label>
         <input id="minecraft-track" type="file" accept="audio/*" aria-label="Choose a local Mice On Venus audio file">
@@ -95,6 +89,56 @@
       </div>
     </aside>
   </main>
+
+  <div class="title-screen" id="title-screen" hidden>
+    <section class="title-panel" aria-label="Block Breaker menu">
+      <header class="title-bar">
+        <span>FULL COURT / ARCADE</span>
+        <p class="wallet"><span>COINS</span><strong id="menu-coin-count">0</strong></p>
+      </header>
+      <section class="menu-page" id="home-page">
+        <p class="menu-eyebrow">BREAK BRICKS. BUILD YOUR COLLECTION.</p>
+        <h1>FULL<br><span>COURT</span></h1>
+        <button class="menu-play-button" id="play-button" type="button">PLAY</button>
+        <nav class="menu-navigation" aria-label="Game menu">
+          <button id="achievements-button" type="button">ACHIEVEMENTS</button>
+          <button id="cases-button" type="button">CASES</button>
+        </nav>
+      </section>
+      <section class="menu-page" id="achievements-page" hidden>
+        <header class="menu-page-heading">
+          <h2>ACHIEVEMENTS <span id="achievement-count">0/3</span></h2>
+          <button class="menu-back-button" type="button">BACK</button>
+        </header>
+        <ul class="menu-achievements">
+          <li><span><strong>QUICK FINISH</strong><small>Clear a level in 30 seconds</small></span><b data-achievement-status="speed-run">LOCKED</b></li>
+          <li><span><strong>ON FIRE</strong><small>Reach a x5 combo</small></span><b data-achievement-status="hot-streak">LOCKED</b></li>
+          <li><span><strong>CLEAN SWEEP</strong><small>Clear a level without losing a ball</small></span><b data-achievement-status="clean-sweep">LOCKED</b></li>
+        </ul>
+      </section>
+      <section class="menu-page" id="cases-page" hidden>
+        <header class="menu-page-heading">
+          <h2>CASE MARKET</h2>
+          <button class="menu-back-button" type="button">BACK</button>
+        </header>
+        <div class="case-reveal" id="case-reveal" data-tier="grey" aria-live="polite">
+          <span id="case-rarity">READY</span>
+          <strong id="case-item-name">OPEN A CASE</strong>
+        </div>
+        <ul class="case-odds" aria-label="Case drop chances">
+          <li class="rarity-grey"><span>GREY</span><strong>55.6%</strong></li>
+          <li class="rarity-blue"><span>BLUE</span><strong>27.8%</strong></li>
+          <li class="rarity-purple"><span>PURPLE</span><strong>13.9%</strong></li>
+          <li class="rarity-gold"><span>GOLD</span><strong>2.8%</strong></li>
+        </ul>
+        <p class="odds-note">Odds are normalized from the requested 60 / 30 / 15 / 3 weights.</p>
+        <button class="menu-play-button case-open-button" id="open-case-button" type="button">OPEN CASE / 100 COINS</button>
+        <p class="case-message" id="case-message" role="status">Earn 1 coin for every brick you break.</p>
+        <h3 class="collection-heading">YOUR DROPS</h3>
+        <ul class="case-inventory" id="case-inventory" aria-label="Your case drops"></ul>
+      </section>
+    </section>
+  </div>
 
   <!-- The order matters: game.js goes first because the other files use its settings. -->
   <script src="game.js"></script>
