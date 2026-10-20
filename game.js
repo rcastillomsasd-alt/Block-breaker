@@ -195,8 +195,14 @@ document.addEventListener("keydown", function (event) {
         if (levelStartedAt === null) {
           levelStartedAt = performance.now();
         }
-        starterBall.vx = Math.sign(paddle.movement) * BALL_SPEED;
-        starterBall.vy = -BALL_SPEED;
+        const launchDirection = Math.sign(paddle.movement) || (Math.random() < 0.5 ? -1 : 1);
+        if (paddle.movement === 0) {
+          starterBall.vx = launchDirection * BALL_SPEED * 0.5;
+          starterBall.vy = -Math.sqrt(BALL_SPEED ** 2 - starterBall.vx ** 2);
+        } else {
+          starterBall.vx = launchDirection * BALL_SPEED;
+          starterBall.vy = -BALL_SPEED;
+        }
       }
     }
   }
