@@ -171,6 +171,40 @@ main.game-layout {
   font-size: 13px;
 }
 
+.combo-display {
+  position: absolute;
+  z-index: 1;
+  top: 48px;
+  left: 12px;
+  margin: 0;
+  padding: 5px 9px;
+  border: 1px solid rgb(255 209 145 / 65%);
+  background: rgb(13 15 18 / 82%);
+  color: #ffe0a0;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.achievement-toast {
+  position: absolute;
+  z-index: 2;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  margin: 0 auto;
+  padding: 8px 12px;
+  border: 1px solid #ffe0a0;
+  background: rgb(13 15 18 / 92%);
+  color: #ffe0a0;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: bold;
+  text-align: center;
+}
+
 .flip-indicator {
   right: 12px;
   border-color: #8de9ef;
@@ -193,6 +227,52 @@ canvas {
   font-family: "Courier New", monospace;
   font-size: 10px;
   line-height: 1.5;
+}
+
+.achievement-tracker {
+  width: min(100%, 600px);
+  margin: 14px auto 0;
+  color: #d3c8c4;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  text-align: left;
+}
+
+.achievement-tracker summary {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-top: 1px solid rgb(255 255 255 / 16%);
+  color: #ffe0a0;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.achievement-tracker ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 4px 0 0;
+  list-style: none;
+}
+
+.achievement-tracker li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+
+.achievement-tracker li strong {
+  flex: 0 0 auto;
+  color: #ff8589;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.achievement-tracker li strong.unlocked {
+  color: #a7e8bc;
 }
 
 kbd {

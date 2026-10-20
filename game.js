@@ -24,6 +24,9 @@ const adminLevelButtons = document.querySelectorAll(".admin-level-button");
 const levelMusic = document.getElementById("level-music");
 const minecraftTrackInput = document.getElementById("minecraft-track");
 const minecraftAudio = document.getElementById("minecraft-audio");
+const comboDisplay = document.getElementById("combo-display");
+const achievementCount = document.getElementById("achievement-count");
+const achievementToast = document.getElementById("achievement-toast");
 
 const WIDTH = 600;
 const HEIGHT = 450;
@@ -51,6 +54,62 @@ let score = 0;
 let isUpsideDown = false;
 let adminKeyBuffer = "";
 let minecraftTrackUrl = null;
+let particles = [];
+let comboStreak = 0;
+let levelStartedAt = null;
+let levelStartReserveCount = STARTING_RESERVES;
+let achievementToastUntil = 0;
+
+const ACHIEVEMENTS = [
+  { id: "speed-run", title: "Quick Finish" },
+  { id: "hot-streak", title: "On Fire" },
+  { id: "clean-sweep", title: "Clean Sweep" }
+];
+const ACHIEVEMENT_STORAGE_KEY = "block-breaker-achievements";
+let unlockedAchievements = new Set();
+
+function updateAchievementList() {
+  document.querySelectorAll("[data-achievement-status]").forEach(status => {
+    const isUnlocked = unlockedAchievements.has(status.dataset.achievementStatus);
+    status.textContent = isUnlocked ? "UNLOCKED" : "LOCKED";
+    status.classList.toggle("unlocked", isUnlocked);
+  });
+  achievementCount.textContent = `${unlockedAchievements.size}/${ACHIEVEMENTS.length}`;
+}
+
+function saveAchievements() {
+  try {
+    localStorage.setItem(ACHIEVEMENT_STORAGE_KEY, JSON.stringify([...unlockedAchievements]));
+  } catch {
+    // Achievements still work for the current session when storage is unavailable.
+  }
+}
+
+function unlockAchievement(id) {
+  const achievement = ACHIEVEMENTS.find(item => item.id === id);
+  if (!achievement || unlockedAchievements.has(id)) {
+    return;
+  }
+
+  unlockedAchievements.add(id);
+  saveAchievements();
+  updateAchievementList();
+  achievementToast.textContent = `ACHIEVEMENT UNLOCKED: ${achievement.title}`;
+  achievementToast.hidden = false;
+  achievementToastUntil = performance.now() + 2600;
+}
+
+function loadAchievements() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ACHIEVEMENT_STORAGE_KEY) || "[]");
+    if (Array.isArray(saved)) {
+      unlockedAchievements = new Set(saved.filter(id => ACHIEVEMENTS.some(item => item.id === id)));
+    }
+  } catch {
+    unlockedAchievements = new Set();
+  }
+  updateAchievementList();
+}
 
 function makeBall(x, y, vx, vy, isStarter = false) {
   return { x, y, width: BALL_SIZE, height: BALL_SIZE, vx, vy, isStarter };
@@ -133,6 +192,9 @@ document.addEventListener("keydown", function (event) {
     if (!event.repeat && gameState === "playing") {
       const starterBall = balls.find(ball => ball.isStarter && ball.vx === 0 && ball.vy === 0);
       if (starterBall) {
+        if (levelStartedAt === null) {
+          levelStartedAt = performance.now();
+        }
         starterBall.vx = Math.sign(paddle.movement) * BALL_SPEED;
         starterBall.vy = -BALL_SPEED;
       }
@@ -178,6 +240,12 @@ minecraftTrackInput.addEventListener("change", function () {
 // what they touched.
 // ------------------------------------------------------------
 function update() {
+  updateParticles();
+  if (achievementToastUntil && performance.now() >= achievementToastUntil) {
+    achievementToast.hidden = true;
+    achievementToastUntil = 0;
+  }
+
   if (gameState !== "playing") {
     return;
   }
@@ -199,8 +267,15 @@ function update() {
     const hitBrick = bounceOffBricks(activeBall);  // collisions.js
 
     if (hitBrick) {
-      score += 100;
+      comboStreak++;
+      const multiplier = Math.min(5, 1 + Math.floor((comboStreak - 1) / 3));
+      score += 100 * multiplier;
       updateScore();
+      updateComboDisplay(multiplier);
+      spawnBrickBurst(hitBrick);
+      if (multiplier === 5) {
+        unlockAchievement("hot-streak");
+      }
       if (hitBrick.powerup === "invert") {
         isUpsideDown = true;
         flipIndicator.hidden = false;
@@ -217,6 +292,7 @@ function update() {
     if (activeBall.y > HEIGHT) {
       balls.splice(index, 1);
       if (activeBall.isStarter) {
+        resetComboStreak();
         if (reserveCount > 0) {
           reserveCount--;
           updateReserveHolder();
@@ -231,6 +307,62 @@ function update() {
   if (gameState === "playing" && bricks.every(brick => brick.optional)) {
     finishGame("You Win!");
   }
+}
+
+function updateComboDisplay(multiplier) {
+  comboDisplay.textContent = `COMBO x${multiplier}`;
+  comboDisplay.hidden = comboStreak === 0;
+}
+
+function resetComboStreak() {
+  comboStreak = 0;
+  comboDisplay.hidden = true;
+}
+
+function spawnBrickBurst(brick) {
+  let color = currentLevel === 2 ? "#b9a17c" : currentLevel === 3 ? "#ffb36f" : "#ff737a";
+  if (brick.powerup === "multiball") color = "#91e8ff";
+  if (brick.powerup === "invert") color = "#e0a3ff";
+  if (brick.material === "diamond") color = "#74f2ff";
+
+  const centerX = brick.x + brick.width / 2;
+  const centerY = brick.y + brick.height / 2;
+  for (let index = 0; index < 10; index++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * 2.8;
+    particles.push({
+      x: centerX,
+      y: centerY,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 24 + Math.random() * 14,
+      maxLife: 38,
+      size: 2 + Math.random() * 3,
+      color
+    });
+  }
+}
+
+function updateParticles() {
+  for (let index = particles.length - 1; index >= 0; index--) {
+    const particle = particles[index];
+    particle.x += particle.vx;
+    particle.y += particle.vy;
+    particle.vy += 0.035;
+    particle.life--;
+    if (particle.life <= 0) {
+      particles.splice(index, 1);
+    }
+  }
+}
+
+function drawParticles() {
+  for (const particle of particles) {
+    ctx.globalAlpha = particle.life / particle.maxLife;
+    ctx.fillStyle = particle.color;
+    ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+  }
+  ctx.globalAlpha = 1;
 }
 
 function updateScore() {
@@ -248,6 +380,15 @@ function updateReserveHolder() {
 
 function finishGame(message) {
   const isWin = message === "You Win!";
+  if (isWin) {
+    const elapsed = levelStartedAt === null ? Infinity : performance.now() - levelStartedAt;
+    if (elapsed <= 30000) {
+      unlockAchievement("speed-run");
+    }
+    if (reserveCount === levelStartReserveCount) {
+      unlockAchievement("clean-sweep");
+    }
+  }
   gameState = isWin ? "won" : "lost";
   minecraftAudio.pause();
   gameMessage.textContent = message;
@@ -277,6 +418,10 @@ function startNextLevel() {
 function resetLevelBoard() {
   bricks = makeBricks(currentLevel);
   balls = [makeStarterBall()];
+  particles = [];
+  resetComboStreak();
+  levelStartedAt = null;
+  levelStartReserveCount = reserveCount;
   isUpsideDown = false;
   flipIndicator.hidden = true;
   paddle.x = WIDTH / 2 - paddle.width / 2;
@@ -353,6 +498,7 @@ function draw() {
   }
 
   drawBricks();  // bricks.js
+  drawParticles();
   ctx.restore();
 }
 
@@ -655,6 +801,7 @@ function frame(now) {
 }
 
 function start() {
+  loadAchievements();
   resetGame();
   lastTime = performance.now();
   requestAnimationFrame(frame);
