@@ -811,6 +811,25 @@ kbd {
   background: #563778;
 }
 
+.admin-add-coins-button {
+  width: 100%;
+  min-height: 34px;
+  margin-top: 8px;
+  border: 1px solid #58d4c5;
+  background: #173c39;
+  color: #bafff4;
+  font: inherit;
+  font-size: 9px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.admin-add-coins-button:hover,
+.admin-add-coins-button:focus-visible {
+  border-color: #bafff4;
+  background: #20544e;
+}
+
 body.admin-open main.game-layout {
   width: min(100%, 1010px);
   grid-template-columns: 76px minmax(0, 660px) 150px;

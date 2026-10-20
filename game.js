@@ -21,6 +21,7 @@ const scoreValue = document.getElementById("score-value");
 const flipIndicator = document.getElementById("flip-indicator");
 const adminPanel = document.getElementById("admin-panel");
 const adminLevelButtons = document.querySelectorAll(".admin-level-button");
+const adminCoinButton = document.getElementById("admin-add-coins");
 const levelMusic = document.getElementById("level-music");
 const minecraftTrackInput = document.getElementById("minecraft-track");
 const minecraftAudio = document.getElementById("minecraft-audio");
@@ -135,6 +136,12 @@ function loadAchievements() {
 function updateCoinDisplay() {
   menuCoinCount.textContent = coins.toLocaleString();
   coinCount.textContent = coins.toLocaleString();
+}
+
+function addCoins(amount) {
+  coins += amount;
+  updateCoinDisplay();
+  saveEconomy();
 }
 
 function saveEconomy() {
@@ -347,6 +354,10 @@ adminLevelButtons.forEach(button => {
   });
 });
 
+adminCoinButton.addEventListener("click", function () {
+  addCoins(1000);
+});
+
 document.addEventListener("keydown", function (event) {
   const key = event.key.toLowerCase();
   if (event.code === "Space") {
@@ -438,10 +449,8 @@ function update() {
       comboStreak++;
       const multiplier = Math.min(5, 1 + Math.floor((comboStreak - 1) / 3));
       score += 100 * multiplier;
-      coins++;
+      addCoins(1);
       updateScore();
-      updateCoinDisplay();
-      saveEconomy();
       updateComboDisplay(multiplier);
       spawnBrickBurst(hitBrick);
       if (multiplier === 5) {
