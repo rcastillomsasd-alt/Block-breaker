@@ -39,8 +39,10 @@ const caseMessage = document.getElementById("case-message");
 const openCaseButton = document.getElementById("open-case-button");
 const paddleInventory = document.getElementById("paddle-inventory");
 const ballInventory = document.getElementById("ball-inventory");
+const trailInventory = document.getElementById("trail-inventory");
 const equippedPaddleSkinName = document.getElementById("equipped-paddle-skin-name");
 const equippedBallSkinName = document.getElementById("equipped-ball-skin-name");
+const equippedTrailName = document.getElementById("equipped-trail-name");
 const caseTypeButtons = document.querySelectorAll("[data-case-type]");
 
 const WIDTH = 600;
@@ -77,9 +79,11 @@ let achievementToastUntil = 0;
 let coins = 0;
 let paddleDrops = [];
 let ballDrops = [];
+let trailDrops = [];
 let caseIsOpening = false;
 let equippedPaddleSkin = null;
 let equippedBallSkin = null;
+let equippedTrail = null;
 let activeCaseType = "paddle";
 
 const ACHIEVEMENTS = [
@@ -95,7 +99,7 @@ const PADDLE_CASE_TIERS = [
   { id: "grey", label: "GREY", weight: 60, items: ["Court Classic", "Rookie Stripe", "Concrete Fade"] },
   { id: "blue", label: "BLUE", weight: 30, items: ["Fast Break", "Neon Cross", "Skyline Slam"] },
   { id: "purple", label: "PURPLE", weight: 15, items: ["Night League", "Royal Rumble", "Violet Voltage"] },
-  { id: "gold", label: "GOLD", weight: 3, items: ["Golden Legend", "Championship Glow", "Crown Jewel"] }
+  { id: "gold", label: "GOLD", weight: 3, items: ["Golden Legend", "Championship Glow", "Crown Jewel", "Galaxy Gold"] }
 ];
 const PADDLE_SKINS = {
   "Court Classic": { top: "#fff1e8", base: "#e43a43", edge: "#7c101c", glow: "#e43a43" },
@@ -107,15 +111,16 @@ const PADDLE_SKINS = {
   "Night League": { top: "#e9ddff", base: "#7152a9", edge: "#302345", glow: "#9b75db" },
   "Royal Rumble": { top: "#ffe89c", base: "#9f3d85", edge: "#461c57", glow: "#d175c1" },
   "Violet Voltage": { top: "#ffa9ef", base: "#973bd1", edge: "#45156b", glow: "#c65bec" },
-  "Golden Legend": { top: "#fff2ac", base: "#d39a24", edge: "#73500e", glow: "#ffd166" },
-  "Championship Glow": { top: "#b4ffe4", base: "#2aa681", edge: "#145d50", glow: "#45d6a8" },
-  "Crown Jewel": { top: "#fff0ba", base: "#1f8b62", edge: "#0d4737", glow: "#44c591" }
+  "Golden Legend": { top: "#fff2ac", base: "#493072", edge: "#18132f", glow: "#ffd166", effect: "galaxy", colors: ["#fff0a6", "#ffbd45", "#a448a0", "#3c286d", "#10152f", "#59dce2"] },
+  "Championship Glow": { top: "#fff3b0", base: "#a53669", edge: "#351c58", glow: "#71edff", effect: "aurora", colors: ["#fff4aa", "#ff8f58", "#ec4f9a", "#704bd0", "#39d5ca"] },
+  "Crown Jewel": { top: "#fff6c5", base: "#b96528", edge: "#532248", glow: "#ffd166", effect: "prism", colors: ["#fff1a8", "#e89934", "#db5684", "#7446a6", "#4bd0bd"] },
+  "Galaxy Gold": { top: "#fff1a6", base: "#422568", edge: "#11132e", glow: "#ffd166", effect: "galaxy", colors: ["#fff2a8", "#ffb63e", "#f05b9c", "#7146bd", "#151a42", "#54e4e2"] }
 };
 const BALL_CASE_TIERS = [
   { id: "grey", label: "GREY", weight: 60, items: ["Street Orange", "Cloud Break", "Concrete Spin"] },
   { id: "blue", label: "BLUE", weight: 30, items: ["Blue Orbit", "Neon Bounce", "Tidal Flight"] },
   { id: "purple", label: "PURPLE", weight: 15, items: ["Night Circuit", "Royal Spin", "Violet Arc"] },
-  { id: "gold", label: "GOLD", weight: 3, items: ["Solar Crown", "Golden Flight", "Prism Dunk"] }
+  { id: "gold", label: "GOLD", weight: 3, items: ["Solar Crown", "Golden Flight", "Prism Dunk", "Galaxy Gold"] }
 ];
 const BALL_SKINS = {
   "Street Orange": { top: "#ffd28a", base: "#e98232", edge: "#873715", seam: "#542312", glow: "#e98232" },
@@ -127,38 +132,71 @@ const BALL_SKINS = {
   "Night Circuit": { top: "#d8caff", base: "#7056a9", edge: "#302449", seam: "#211a35", glow: "#a07fe0" },
   "Royal Spin": { top: "#ffdcaa", base: "#a84b8c", edge: "#4c275f", seam: "#311b40", glow: "#d981bd" },
   "Violet Arc": { top: "#ffc4ef", base: "#a23bd1", edge: "#45156b", seam: "#32104c", glow: "#d365f0" },
-  "Solar Crown": { top: "#fff0a6", base: "#e69b21", edge: "#8b4815", seam: "#61300f", glow: "#ffd166" },
-  "Golden Flight": { top: "#fff3b8", base: "#d1a52c", edge: "#75530d", seam: "#4e390c", glow: "#ffdc55" },
-  "Prism Dunk": { top: "#baffdf", base: "#31a889", edge: "#14535b", seam: "#103746", glow: "#5ee1b5" }
+  "Solar Crown": { top: "#fff0a6", base: "#6b347c", edge: "#21143d", seam: "#21143d", glow: "#ffd166", effect: "galaxy", colors: ["#fff4ac", "#ffb63e", "#e7549a", "#7047c0", "#101935", "#62e4df"] },
+  "Golden Flight": { top: "#fff3b8", base: "#bd5429", edge: "#48204b", seam: "#32183d", glow: "#ffdc55", effect: "aurora", colors: ["#fff4b3", "#ff9e44", "#ef527e", "#7855d7", "#43d8c9"] },
+  "Prism Dunk": { top: "#baffdf", base: "#31a889", edge: "#14535b", seam: "#103746", glow: "#5ee1b5", effect: "prism", colors: ["#fff2aa", "#ff9b56", "#e84f9e", "#7455d7", "#45dfca"] },
+  "Galaxy Gold": { top: "#fff1a6", base: "#593478", edge: "#171631", seam: "#100e28", glow: "#ffd166", effect: "galaxy", colors: ["#fff2a8", "#ffb63e", "#f05b9c", "#7146bd", "#151a42", "#54e4e2"] }
+};
+const TRAIL_CASE_TIERS = [
+  { id: "grey", label: "GREY", weight: 60, items: ["Comet Dust", "Afterimage", "Stardust"] },
+  { id: "blue", label: "BLUE", weight: 30, items: ["Neon Circuit", "Tidal Wake", "Blue Streak"] },
+  { id: "purple", label: "PURPLE", weight: 15, items: ["Nebula Wake", "Witchlight", "Violet Spiral"] },
+  { id: "gold", label: "GOLD", weight: 3, items: ["Galaxy Gold Trail", "Solar Flare", "Prismatic Comet"] }
+];
+const BALL_TRAILS = {
+  "Comet Dust": { top: "#fff1c0", base: "#e98232", glow: "#ffb253", colors: ["#fff1c0", "#ffb253", "#e98232"], shape: "spark" },
+  "Afterimage": { top: "#e4e7e7", base: "#77888c", glow: "#bdc7c9", colors: ["#f5f7f7", "#bdc7c9", "#77888c"], shape: "ring" },
+  "Stardust": { top: "#fff5d1", base: "#b8a888", glow: "#fff0bd", colors: ["#fff5d1", "#decba4", "#b8a888"], shape: "star" },
+  "Neon Circuit": { top: "#a8fff4", base: "#26b5dc", glow: "#57e9ff", colors: ["#f6ff91", "#57e9ff", "#2683ff"], shape: "square" },
+  "Tidal Wake": { top: "#c0fff1", base: "#27c6bd", glow: "#65ffe3", colors: ["#d8fff2", "#65ffe3", "#1997c8"], shape: "ring" },
+  "Blue Streak": { top: "#d5f8ff", base: "#2f76ff", glow: "#70baff", colors: ["#e5fbff", "#70baff", "#694eff"], shape: "spark" },
+  "Nebula Wake": { top: "#ffc5fa", base: "#a749ee", glow: "#dc72ff", colors: ["#ffd3f8", "#dc72ff", "#725bff"], shape: "galaxy" },
+  "Witchlight": { top: "#e8d1ff", base: "#8651ca", glow: "#c69bff", colors: ["#f0d8ff", "#c69bff", "#7458ed"], shape: "spark" },
+  "Violet Spiral": { top: "#ffc5ef", base: "#b842d6", glow: "#f17de7", colors: ["#ffe1f6", "#f17de7", "#734fff"], shape: "ring" },
+  "Galaxy Gold Trail": { top: "#fff0a6", base: "#704bd5", glow: "#ffd166", colors: ["#fff1a6", "#ffd166", "#ff67ba", "#8a5cff", "#54e4e2"], shape: "galaxy" },
+  "Solar Flare": { top: "#fff3b3", base: "#f36e35", glow: "#ffe27a", colors: ["#fff8c2", "#ffe27a", "#ff8a3d", "#f04c68"], shape: "spark" },
+  "Prismatic Comet": { top: "#fff0b0", base: "#e64f9f", glow: "#ffd166", colors: ["#fff0b0", "#68f0df", "#7f6aff", "#f45cc5"], shape: "ring" }
 };
 
 function caseTiers(type) {
-  return type === "ball" ? BALL_CASE_TIERS : PADDLE_CASE_TIERS;
+  if (type === "ball") return BALL_CASE_TIERS;
+  if (type === "trail") return TRAIL_CASE_TIERS;
+  return PADDLE_CASE_TIERS;
 }
 
 function skinPalette(type) {
-  return type === "ball" ? BALL_SKINS : PADDLE_SKINS;
+  if (type === "ball") return BALL_SKINS;
+  if (type === "trail") return BALL_TRAILS;
+  return PADDLE_SKINS;
 }
 
 function ownedDrops(type) {
-  return type === "ball" ? ballDrops : paddleDrops;
+  if (type === "ball") return ballDrops;
+  if (type === "trail") return trailDrops;
+  return paddleDrops;
 }
 
 function setOwnedDrops(type, drops) {
   if (type === "ball") {
     ballDrops = drops;
+  } else if (type === "trail") {
+    trailDrops = drops;
   } else {
     paddleDrops = drops;
   }
 }
 
 function equippedSkin(type) {
-  return type === "ball" ? equippedBallSkin : equippedPaddleSkin;
+  if (type === "ball") return equippedBallSkin;
+  if (type === "trail") return equippedTrail;
+  return equippedPaddleSkin;
 }
 
 function setEquippedSkin(type, skinName) {
   if (type === "ball") {
     equippedBallSkin = skinName;
+  } else if (type === "trail") {
+    equippedTrail = skinName;
   } else {
     equippedPaddleSkin = skinName;
   }
@@ -224,8 +262,10 @@ function saveEconomy() {
       coins,
       paddleDrops,
       ballDrops,
+      trailDrops,
       equippedPaddleSkin,
-      equippedBallSkin
+      equippedBallSkin,
+      equippedTrail
     }));
   } catch {
     caseMessage.textContent = "Save unavailable in this browser session.";
@@ -241,6 +281,7 @@ function loadEconomy() {
       : [];
     paddleDrops = validDrops(saved.paddleDrops || saved.caseDrops, PADDLE_CASE_TIERS);
     ballDrops = validDrops(saved.ballDrops, BALL_CASE_TIERS);
+    trailDrops = validDrops(saved.trailDrops, TRAIL_CASE_TIERS);
     const oldEquippedSkin = saved.equippedPaddleSkin || saved.equippedSkin;
     equippedPaddleSkin = typeof oldEquippedSkin === "string" && paddleDrops.some(drop => drop.name === oldEquippedSkin)
       ? oldEquippedSkin
@@ -248,21 +289,27 @@ function loadEconomy() {
     equippedBallSkin = typeof saved.equippedBallSkin === "string" && ballDrops.some(drop => drop.name === saved.equippedBallSkin)
       ? saved.equippedBallSkin
       : null;
+    equippedTrail = typeof saved.equippedTrail === "string" && trailDrops.some(drop => drop.name === saved.equippedTrail)
+      ? saved.equippedTrail
+      : null;
   } catch {
     coins = 0;
     paddleDrops = [];
     ballDrops = [];
+    trailDrops = [];
     equippedPaddleSkin = null;
     equippedBallSkin = null;
+    equippedTrail = null;
   }
   updateCoinDisplay();
   renderSkinInventory("paddle");
   renderSkinInventory("ball");
+  renderSkinInventory("trail");
 }
 
 function renderSkinInventory(type) {
-  const inventory = type === "ball" ? ballInventory : paddleInventory;
-  const equippedName = type === "ball" ? equippedBallSkinName : equippedPaddleSkinName;
+  const inventory = type === "ball" ? ballInventory : type === "trail" ? trailInventory : paddleInventory;
+  const equippedName = type === "ball" ? equippedBallSkinName : type === "trail" ? equippedTrailName : equippedPaddleSkinName;
   const drops = ownedDrops(type);
   const skins = skinPalette(type);
   inventory.replaceChildren();
@@ -282,10 +329,16 @@ function renderSkinInventory(type) {
     const item = document.createElement("li");
     item.className = `inventory-item rarity-${drop.tier}`;
     const swatch = document.createElement("span");
-    swatch.className = type === "ball" ? "inventory-swatch ball-swatch" : "inventory-swatch";
+    swatch.className = type === "ball"
+      ? "inventory-swatch ball-swatch"
+      : type === "trail" ? "inventory-swatch trail-swatch" : "inventory-swatch";
     swatch.setAttribute("aria-hidden", "true");
     swatch.style.setProperty("--skin-top", skin.top);
     swatch.style.setProperty("--skin-base", skin.base);
+    if (skin.colors) {
+      swatch.style.setProperty("--skin-colors", skin.colors.join(", "));
+      swatch.style.setProperty("--trail-colors", skin.colors.join(", "));
+    }
     const rarity = document.createElement("span");
     rarity.textContent = drop.tier.toUpperCase();
     const name = document.createElement("strong");
@@ -401,7 +454,7 @@ caseTypeButtons.forEach(button => {
     });
     caseReveal.dataset.tier = "grey";
     caseRarity.textContent = "READY";
-    caseItemName.textContent = `${activeCaseType.toUpperCase()} SKIN CASE`;
+    caseItemName.textContent = activeCaseType === "trail" ? "BALL TRAIL CASE" : `${activeCaseType.toUpperCase()} SKIN CASE`;
     caseMessage.textContent = "Earn 5 coins for every brick you break.";
   });
 });
@@ -427,7 +480,7 @@ document.getElementById("menu-button").addEventListener("click", function () {
 });
 
 function makeBall(x, y, vx, vy, isStarter = false) {
-  return { x, y, width: BALL_SIZE, height: BALL_SIZE, vx, vy, isStarter };
+  return { x, y, width: BALL_SIZE, height: BALL_SIZE, vx, vy, isStarter, trail: [] };
 }
 
 function makeStarterBall() {
@@ -804,6 +857,85 @@ function movePaddle() {
 function moveBall(activeBall) {
   activeBall.x = activeBall.x + activeBall.vx;
   activeBall.y = activeBall.y + activeBall.vy;
+  if (equippedTrail) {
+    activeBall.trail.unshift({
+      x: activeBall.x + activeBall.width / 2,
+      y: activeBall.y + activeBall.height / 2
+    });
+    activeBall.trail.length = Math.min(activeBall.trail.length, 18);
+  }
+}
+
+function drawBallTrail(activeBall) {
+  const skin = BALL_TRAILS[equippedTrail];
+  if (!skin || activeBall.trail.length === 0) {
+    return;
+  }
+
+  const trailLength = activeBall.trail.length;
+  const animationStep = Math.floor(performance.now() / 90);
+  ctx.save();
+  activeBall.trail.forEach((point, index) => {
+    const progress = index / Math.max(1, trailLength - 1);
+    const size = activeBall.width * (0.43 - progress * 0.27);
+    const color = skin.colors[(index + animationStep) % skin.colors.length];
+    ctx.globalAlpha = 0.72 * (1 - progress);
+    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
+    ctx.shadowColor = skin.glow;
+    ctx.shadowBlur = 8 * (1 - progress);
+    ctx.save();
+    ctx.translate(point.x, point.y);
+
+    if (skin.shape === "ring") {
+      ctx.beginPath();
+      ctx.arc(0, 0, size, 0, Math.PI * 2);
+      ctx.lineWidth = Math.max(1, size * 0.28);
+      ctx.stroke();
+    } else if (skin.shape === "square") {
+      ctx.rotate((animationStep + index) * 0.12);
+      ctx.fillRect(-size * 0.65, -size * 0.65, size * 1.3, size * 1.3);
+    } else if (skin.shape === "galaxy") {
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 0.72, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(0, 0, size * 1.55, size * 0.48, animationStep * 0.04 + index * 0.2, 0, Math.PI * 2);
+      ctx.lineWidth = Math.max(1, size * 0.18);
+      ctx.stroke();
+    } else if (skin.shape === "star" || skin.shape === "spark") {
+      ctx.rotate((animationStep + index) * 0.08);
+      ctx.beginPath();
+      ctx.moveTo(0, -size * 1.5);
+      ctx.lineTo(size * 0.28, -size * 0.28);
+      ctx.lineTo(size * 1.5, 0);
+      ctx.lineTo(size * 0.28, size * 0.28);
+      ctx.lineTo(0, size * 1.5);
+      ctx.lineTo(-size * 0.28, size * 0.28);
+      ctx.lineTo(-size * 1.5, 0);
+      ctx.lineTo(-size * 0.28, -size * 0.28);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(0, -size);
+      ctx.lineTo(size, 0);
+      ctx.lineTo(0, size);
+      ctx.lineTo(-size, 0);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    if (skin.shape === "galaxy" && index % 3 === 0) {
+      ctx.fillStyle = "#fff6ca";
+      ctx.beginPath();
+      ctx.arc(size * 1.35, -size * 0.8, Math.max(0.7, size * 0.22), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  });
+  ctx.restore();
+  ctx.globalAlpha = 1;
 }
 
 
@@ -820,6 +952,7 @@ function draw() {
   drawCourt();
   drawPaddle();
   for (const activeBall of balls) {
+    drawBallTrail(activeBall);
     drawBasketball(activeBall);
   }
 
@@ -1000,20 +1133,80 @@ function drawBeachCourt() {
   ctx.strokeRect(18, 18, WIDTH - 36, HEIGHT - 36);
 }
 
+function drawPaddleSkinEffects(skin) {
+  const now = performance.now();
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 6);
+  ctx.clip();
+
+  const shimmerOffset = (now % 1800) / 1800 * (paddle.width + paddle.height) - paddle.height;
+  const shimmer = ctx.createLinearGradient(
+    paddle.x + shimmerOffset,
+    paddle.y,
+    paddle.x + shimmerOffset + paddle.height,
+    paddle.y + paddle.height
+  );
+  shimmer.addColorStop(0, "rgb(255 255 255 / 0%)");
+  shimmer.addColorStop(0.5, "rgb(255 255 255 / 52%)");
+  shimmer.addColorStop(1, "rgb(255 255 255 / 0%)");
+  ctx.fillStyle = shimmer;
+  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+  if (skin.effect === "galaxy") {
+    for (let index = 0; index < 9; index++) {
+      const x = paddle.x + ((index * 37 + 13) % 89) + 1;
+      const y = paddle.y + 3 + (index * 7) % 7;
+      const twinkle = 0.35 + (Math.sin(now / 180 + index * 1.7) + 1) * 0.32;
+      ctx.globalAlpha = twinkle;
+      ctx.fillStyle = index % 2 === 0 ? "#fff4bc" : "#73f3f0";
+      ctx.fillRect(x, y, index % 3 === 0 ? 2 : 1, index % 3 === 0 ? 2 : 1);
+    }
+  } else if (skin.effect === "aurora") {
+    ctx.globalAlpha = 0.7;
+    ctx.strokeStyle = "rgb(199 255 243 / 85%)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(paddle.x, paddle.y + paddle.height * 0.7);
+    ctx.quadraticCurveTo(paddle.x + paddle.width * 0.48, paddle.y - 3, paddle.x + paddle.width, paddle.y + paddle.height * 0.55);
+    ctx.stroke();
+  } else {
+    ctx.globalAlpha = 0.78;
+    ctx.fillStyle = "#fff4c2";
+    for (let index = 0; index < 5; index++) {
+      const x = paddle.x + 10 + index * 17;
+      const y = paddle.y + (index % 2 ? 3 : 7);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillRect(-1.2, -1.2, 2.4, 2.4);
+      ctx.restore();
+    }
+  }
+
+  ctx.restore();
+}
+
 function drawPaddle() {
   const skin = PADDLE_SKINS[equippedPaddleSkin];
   if (skin) {
     ctx.save();
     ctx.shadowColor = skin.glow;
     ctx.shadowBlur = 14;
-    const skinGradient = ctx.createLinearGradient(0, paddle.y, 0, paddle.y + paddle.height);
-    skinGradient.addColorStop(0, skin.top);
-    skinGradient.addColorStop(0.3, skin.base);
-    skinGradient.addColorStop(1, skin.edge);
+    const skinGradient = skin.colors
+      ? ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y + paddle.height)
+      : ctx.createLinearGradient(0, paddle.y, 0, paddle.y + paddle.height);
+    const skinColors = skin.colors || [skin.top, skin.base, skin.edge];
+    skinColors.forEach((color, index) => {
+      skinGradient.addColorStop(index / (skinColors.length - 1), color);
+    });
     ctx.fillStyle = skinGradient;
     ctx.beginPath();
     ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 6);
     ctx.fill();
+    if (skin.effect) {
+      drawPaddleSkinEffects(skin);
+    }
     ctx.shadowBlur = 0;
     ctx.strokeStyle = skin.top;
     ctx.lineWidth = 1;
@@ -1063,6 +1256,62 @@ function drawPaddle() {
   ctx.restore();
 }
 
+function drawBallSkinEffects(skin, centerX, centerY, radius) {
+  const now = performance.now();
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.clip();
+
+  if (skin.effect === "galaxy") {
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(now / 2300);
+    ctx.strokeStyle = "rgb(105 240 242 / 76%)";
+    ctx.lineWidth = Math.max(0.7, radius * 0.12);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, radius * 0.92, radius * 0.34, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+    const stars = [[-0.48, -0.38], [0.42, -0.5], [0.5, 0.32], [-0.15, 0.6], [-0.65, 0.12]];
+    stars.forEach(([x, y], index) => {
+      ctx.globalAlpha = 0.42 + (Math.sin(now / 170 + index * 2) + 1) * 0.26;
+      ctx.fillStyle = index % 2 === 0 ? "#fff3bd" : "#a2f8f0";
+      ctx.beginPath();
+      ctx.arc(centerX + x * radius, centerY + y * radius, Math.max(0.6, radius * 0.12), 0, Math.PI * 2);
+      ctx.fill();
+    });
+  } else if (skin.effect === "aurora") {
+    ctx.globalAlpha = 0.68;
+    ctx.strokeStyle = "rgb(221 255 245 / 82%)";
+    ctx.lineWidth = Math.max(0.7, radius * 0.14);
+    ctx.beginPath();
+    ctx.moveTo(centerX - radius, centerY + radius * 0.25);
+    ctx.quadraticCurveTo(centerX, centerY - radius * 0.95, centerX + radius, centerY - radius * 0.15);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(255 210 132 / 74%)";
+    ctx.beginPath();
+    ctx.moveTo(centerX - radius * 0.8, centerY + radius * 0.65);
+    ctx.quadraticCurveTo(centerX, centerY - radius * 0.2, centerX + radius * 0.8, centerY + radius * 0.5);
+    ctx.stroke();
+  } else {
+    ctx.globalAlpha = 0.78;
+    ctx.fillStyle = "#fff4c2";
+    for (let index = 0; index < 4; index++) {
+      const angle = now / 1900 + index * Math.PI / 2;
+      const x = centerX + Math.cos(angle) * radius * 0.56;
+      const y = centerY + Math.sin(angle) * radius * 0.56;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillRect(-radius * 0.11, -radius * 0.11, radius * 0.22, radius * 0.22);
+      ctx.restore();
+    }
+  }
+
+  ctx.restore();
+}
+
 function drawBasketball(activeBall) {
   const radius = activeBall.width / 2;
   const centerX = activeBall.x + radius;
@@ -1077,9 +1326,10 @@ function drawBasketball(activeBall) {
       centerY,
       radius * 1.1
     );
-    skinGradient.addColorStop(0, skin.top);
-    skinGradient.addColorStop(0.4, skin.base);
-    skinGradient.addColorStop(1, skin.edge);
+    const skinColors = skin.colors || [skin.top, skin.base, skin.edge];
+    skinColors.forEach((color, index) => {
+      skinGradient.addColorStop(index / (skinColors.length - 1), color);
+    });
     ctx.save();
     ctx.shadowColor = skin.glow;
     ctx.shadowBlur = 10;
@@ -1087,6 +1337,9 @@ function drawBasketball(activeBall) {
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
     ctx.fill();
+    if (skin.effect) {
+      drawBallSkinEffects(skin, centerX, centerY, radius);
+    }
     ctx.shadowBlur = 0;
     ctx.strokeStyle = skin.seam;
     ctx.lineWidth = Math.max(1, radius * 0.14);

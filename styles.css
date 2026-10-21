@@ -522,7 +522,7 @@ canvas {
 
 .case-type-selector {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   margin-bottom: 12px;
 }
@@ -647,12 +647,20 @@ canvas {
   flex: 0 0 34px;
   height: 10px;
   border: 1px solid rgb(255 255 255 / 45%);
-  background: linear-gradient(var(--skin-top), var(--skin-base));
+  background: linear-gradient(90deg, var(--skin-colors, var(--skin-top) 0%, var(--skin-base) 100%));
 }
 .inventory-swatch.ball-swatch {
   flex-basis: 24px;
   height: 24px;
   border-radius: 50%;
+}
+.inventory-swatch.trail-swatch {
+  flex-basis: 42px;
+  height: 6px;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--skin-base);
+  background: linear-gradient(90deg, var(--trail-colors, var(--skin-top), var(--skin-base)));
 }
 .inventory-item-details {
   display: grid;
