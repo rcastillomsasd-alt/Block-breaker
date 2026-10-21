@@ -398,7 +398,7 @@ canvas {
 
 .menu-navigation {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 10px;
 }
@@ -438,7 +438,7 @@ canvas {
 
 .menu-achievements,
 .case-odds,
-.case-inventory {
+.menu-inventory {
   display: grid;
   gap: 8px;
   margin: 0;
@@ -520,6 +520,31 @@ canvas {
   animation: case-pulse 0.15s ease-in-out infinite alternate;
 }
 
+.case-type-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.case-type-button {
+  min-height: 38px;
+  border: 1px solid rgb(255 255 255 / 24%);
+  background: transparent;
+  color: #a8b8b8;
+  cursor: pointer;
+  font: bold 10px "Courier New", monospace;
+}
+
+.case-type-button.is-active,
+.case-type-button:hover,
+.case-type-button:focus-visible {
+  border-color: #58d4c5;
+  color: #58d4c5;
+}
+
+.case-type-button:disabled { cursor: wait; }
+
 @keyframes case-pulse {
   from { filter: brightness(0.8); }
   to { filter: brightness(1.5); }
@@ -575,23 +600,41 @@ canvas {
   color: #58d4c5;
 }
 
-.collection-heading {
-  margin: 0 0 8px;
-  color: #a8b8b8;
+.equipped-skin-status {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 12px;
+  color: #9aabab;
   font-family: "Courier New", monospace;
   font-size: 10px;
 }
 
-.case-inventory {
-  max-height: 112px;
-  overflow-y: auto;
+.equipped-skin-status strong {
+  color: #58d4c5;
+}
+
+.menu-inventory-section + .menu-inventory-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+}
+
+.menu-inventory-section h3 {
+  margin: 0 0 8px;
+  color: #a8b8b8;
+  font: bold 10px "Courier New", monospace;
+}
+
+.menu-inventory-section .equipped-skin-status {
+  margin-bottom: 8px;
 }
 
 .inventory-item {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   gap: 12px;
-  padding: 8px 10px;
+  min-height: 48px;
+  padding: 6px 10px;
   border-left: 3px solid #c4ccd0;
   background: rgb(255 255 255 / 4%);
   font-size: 11px;
@@ -600,8 +643,39 @@ canvas {
 .inventory-item.rarity-blue { border-left-color: #55a9ff; }
 .inventory-item.rarity-purple { border-left-color: #bb8cff; }
 .inventory-item.rarity-gold { border-left-color: #ffd166; }
-.inventory-item span { font-family: "Courier New", monospace; font-size: 9px; }
-.inventory-item strong { color: #f4f6f0; }
+.inventory-swatch {
+  flex: 0 0 34px;
+  height: 10px;
+  border: 1px solid rgb(255 255 255 / 45%);
+  background: linear-gradient(var(--skin-top), var(--skin-base));
+}
+.inventory-swatch.ball-swatch {
+  flex-basis: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+.inventory-item-details {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+}
+.inventory-item-details span { font-family: "Courier New", monospace; font-size: 9px; }
+.inventory-item strong { overflow-wrap: anywhere; color: #f4f6f0; }
+.inventory-equip-button {
+  flex: 0 0 auto;
+  min-width: 74px;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid rgb(255 255 255 / 24%);
+  background: transparent;
+  color: #f6f1ed;
+  cursor: pointer;
+  font: bold 9px "Courier New", monospace;
+}
+.inventory-equip-button:hover,
+.inventory-equip-button:focus-visible { border-color: #58d4c5; color: #58d4c5; }
+.inventory-equip-button:disabled { border-color: #58d4c5; color: #58d4c5; cursor: default; }
 .inventory-empty { padding: 10px; color: #9aabab; font-size: 11px; }
 
 .menu-return-button {

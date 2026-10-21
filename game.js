@@ -37,7 +37,11 @@ const caseRarity = document.getElementById("case-rarity");
 const caseItemName = document.getElementById("case-item-name");
 const caseMessage = document.getElementById("case-message");
 const openCaseButton = document.getElementById("open-case-button");
-const caseInventory = document.getElementById("case-inventory");
+const paddleInventory = document.getElementById("paddle-inventory");
+const ballInventory = document.getElementById("ball-inventory");
+const equippedPaddleSkinName = document.getElementById("equipped-paddle-skin-name");
+const equippedBallSkinName = document.getElementById("equipped-ball-skin-name");
+const caseTypeButtons = document.querySelectorAll("[data-case-type]");
 
 const WIDTH = 600;
 const HEIGHT = 450;
@@ -71,8 +75,12 @@ let levelStartedAt = null;
 let levelStartReserveCount = STARTING_RESERVES;
 let achievementToastUntil = 0;
 let coins = 0;
-let caseDrops = [];
+let paddleDrops = [];
+let ballDrops = [];
 let caseIsOpening = false;
+let equippedPaddleSkin = null;
+let equippedBallSkin = null;
+let activeCaseType = "paddle";
 
 const ACHIEVEMENTS = [
   { id: "speed-run", title: "Quick Finish" },
@@ -83,12 +91,78 @@ const ACHIEVEMENT_STORAGE_KEY = "block-breaker-achievements";
 const ECONOMY_STORAGE_KEY = "block-breaker-economy";
 const CASE_COST = 100;
 let unlockedAchievements = new Set();
-const CASE_TIERS = [
+const PADDLE_CASE_TIERS = [
   { id: "grey", label: "GREY", weight: 60, items: ["Court Classic", "Rookie Stripe", "Concrete Fade"] },
   { id: "blue", label: "BLUE", weight: 30, items: ["Fast Break", "Neon Cross", "Skyline Slam"] },
   { id: "purple", label: "PURPLE", weight: 15, items: ["Night League", "Royal Rumble", "Violet Voltage"] },
   { id: "gold", label: "GOLD", weight: 3, items: ["Golden Legend", "Championship Glow", "Crown Jewel"] }
 ];
+const PADDLE_SKINS = {
+  "Court Classic": { top: "#fff1e8", base: "#e43a43", edge: "#7c101c", glow: "#e43a43" },
+  "Rookie Stripe": { top: "#e9f5ff", base: "#3688d9", edge: "#164873", glow: "#3688d9" },
+  "Concrete Fade": { top: "#e3e8e8", base: "#788687", edge: "#313a3b", glow: "#aab6b6" },
+  "Fast Break": { top: "#fff0bf", base: "#f37935", edge: "#923712", glow: "#f37935" },
+  "Neon Cross": { top: "#e8ff7a", base: "#9dc920", edge: "#3f6013", glow: "#a9df22" },
+  "Skyline Slam": { top: "#c8f5ff", base: "#25a9c4", edge: "#13526a", glow: "#25c3d9" },
+  "Night League": { top: "#e9ddff", base: "#7152a9", edge: "#302345", glow: "#9b75db" },
+  "Royal Rumble": { top: "#ffe89c", base: "#9f3d85", edge: "#461c57", glow: "#d175c1" },
+  "Violet Voltage": { top: "#ffa9ef", base: "#973bd1", edge: "#45156b", glow: "#c65bec" },
+  "Golden Legend": { top: "#fff2ac", base: "#d39a24", edge: "#73500e", glow: "#ffd166" },
+  "Championship Glow": { top: "#b4ffe4", base: "#2aa681", edge: "#145d50", glow: "#45d6a8" },
+  "Crown Jewel": { top: "#fff0ba", base: "#1f8b62", edge: "#0d4737", glow: "#44c591" }
+};
+const BALL_CASE_TIERS = [
+  { id: "grey", label: "GREY", weight: 60, items: ["Street Orange", "Cloud Break", "Concrete Spin"] },
+  { id: "blue", label: "BLUE", weight: 30, items: ["Blue Orbit", "Neon Bounce", "Tidal Flight"] },
+  { id: "purple", label: "PURPLE", weight: 15, items: ["Night Circuit", "Royal Spin", "Violet Arc"] },
+  { id: "gold", label: "GOLD", weight: 3, items: ["Solar Crown", "Golden Flight", "Prism Dunk"] }
+];
+const BALL_SKINS = {
+  "Street Orange": { top: "#ffd28a", base: "#e98232", edge: "#873715", seam: "#542312", glow: "#e98232" },
+  "Cloud Break": { top: "#ffffff", base: "#b6cbd8", edge: "#547180", seam: "#304856", glow: "#b6cbd8" },
+  "Concrete Spin": { top: "#d9e0de", base: "#82918d", edge: "#3b4946", seam: "#27322f", glow: "#9eaaa6" },
+  "Blue Orbit": { top: "#b8edff", base: "#287fd1", edge: "#103d81", seam: "#092b55", glow: "#45b5ff" },
+  "Neon Bounce": { top: "#edff8a", base: "#8cbd2c", edge: "#3c6716", seam: "#26430e", glow: "#b8ef4b" },
+  "Tidal Flight": { top: "#a8fff0", base: "#21a9a5", edge: "#155064", seam: "#103c50", glow: "#45dfd2" },
+  "Night Circuit": { top: "#d8caff", base: "#7056a9", edge: "#302449", seam: "#211a35", glow: "#a07fe0" },
+  "Royal Spin": { top: "#ffdcaa", base: "#a84b8c", edge: "#4c275f", seam: "#311b40", glow: "#d981bd" },
+  "Violet Arc": { top: "#ffc4ef", base: "#a23bd1", edge: "#45156b", seam: "#32104c", glow: "#d365f0" },
+  "Solar Crown": { top: "#fff0a6", base: "#e69b21", edge: "#8b4815", seam: "#61300f", glow: "#ffd166" },
+  "Golden Flight": { top: "#fff3b8", base: "#d1a52c", edge: "#75530d", seam: "#4e390c", glow: "#ffdc55" },
+  "Prism Dunk": { top: "#baffdf", base: "#31a889", edge: "#14535b", seam: "#103746", glow: "#5ee1b5" }
+};
+
+function caseTiers(type) {
+  return type === "ball" ? BALL_CASE_TIERS : PADDLE_CASE_TIERS;
+}
+
+function skinPalette(type) {
+  return type === "ball" ? BALL_SKINS : PADDLE_SKINS;
+}
+
+function ownedDrops(type) {
+  return type === "ball" ? ballDrops : paddleDrops;
+}
+
+function setOwnedDrops(type, drops) {
+  if (type === "ball") {
+    ballDrops = drops;
+  } else {
+    paddleDrops = drops;
+  }
+}
+
+function equippedSkin(type) {
+  return type === "ball" ? equippedBallSkin : equippedPaddleSkin;
+}
+
+function setEquippedSkin(type, skinName) {
+  if (type === "ball") {
+    equippedBallSkin = skinName;
+  } else {
+    equippedPaddleSkin = skinName;
+  }
+}
 
 function updateAchievementList() {
   document.querySelectorAll("[data-achievement-status]").forEach(status => {
@@ -146,7 +220,13 @@ function addCoins(amount) {
 
 function saveEconomy() {
   try {
-    localStorage.setItem(ECONOMY_STORAGE_KEY, JSON.stringify({ coins, caseDrops }));
+    localStorage.setItem(ECONOMY_STORAGE_KEY, JSON.stringify({
+      coins,
+      paddleDrops,
+      ballDrops,
+      equippedPaddleSkin,
+      equippedBallSkin
+    }));
   } catch {
     caseMessage.textContent = "Save unavailable in this browser session.";
   }
@@ -156,48 +236,88 @@ function loadEconomy() {
   try {
     const saved = JSON.parse(localStorage.getItem(ECONOMY_STORAGE_KEY) || "{}");
     coins = Number.isSafeInteger(saved.coins) && saved.coins >= 0 ? saved.coins : 0;
-    caseDrops = Array.isArray(saved.caseDrops)
-      ? saved.caseDrops.filter(drop => drop && CASE_TIERS.some(tier => tier.id === drop.tier && tier.items.includes(drop.name)))
+    const validDrops = (drops, tiers) => Array.isArray(drops)
+      ? drops.filter(drop => drop && tiers.some(tier => tier.id === drop.tier && tier.items.includes(drop.name)))
       : [];
+    paddleDrops = validDrops(saved.paddleDrops || saved.caseDrops, PADDLE_CASE_TIERS);
+    ballDrops = validDrops(saved.ballDrops, BALL_CASE_TIERS);
+    const oldEquippedSkin = saved.equippedPaddleSkin || saved.equippedSkin;
+    equippedPaddleSkin = typeof oldEquippedSkin === "string" && paddleDrops.some(drop => drop.name === oldEquippedSkin)
+      ? oldEquippedSkin
+      : null;
+    equippedBallSkin = typeof saved.equippedBallSkin === "string" && ballDrops.some(drop => drop.name === saved.equippedBallSkin)
+      ? saved.equippedBallSkin
+      : null;
   } catch {
     coins = 0;
-    caseDrops = [];
+    paddleDrops = [];
+    ballDrops = [];
+    equippedPaddleSkin = null;
+    equippedBallSkin = null;
   }
   updateCoinDisplay();
-  renderCaseInventory();
+  renderSkinInventory("paddle");
+  renderSkinInventory("ball");
 }
 
-function renderCaseInventory() {
-  caseInventory.replaceChildren();
-  if (caseDrops.length === 0) {
+function renderSkinInventory(type) {
+  const inventory = type === "ball" ? ballInventory : paddleInventory;
+  const equippedName = type === "ball" ? equippedBallSkinName : equippedPaddleSkinName;
+  const drops = ownedDrops(type);
+  const skins = skinPalette(type);
+  inventory.replaceChildren();
+  equippedName.textContent = equippedSkin(type) || "NONE";
+  const ownedSkins = [...new Map(drops.map(drop => [drop.name, drop])).values()];
+  if (ownedSkins.length === 0) {
     const emptyMessage = document.createElement("li");
     emptyMessage.className = "inventory-empty";
-    emptyMessage.textContent = "No drops yet";
-    caseInventory.append(emptyMessage);
+    emptyMessage.textContent = `No ${type} skins yet. Open a ${type} case to collect one.`;
+    inventory.append(emptyMessage);
     return;
   }
 
-  for (const drop of caseDrops) {
+  for (const drop of ownedSkins) {
+    const skin = skins[drop.name];
+    const isEquipped = equippedSkin(type) === drop.name;
     const item = document.createElement("li");
     item.className = `inventory-item rarity-${drop.tier}`;
+    const swatch = document.createElement("span");
+    swatch.className = type === "ball" ? "inventory-swatch ball-swatch" : "inventory-swatch";
+    swatch.setAttribute("aria-hidden", "true");
+    swatch.style.setProperty("--skin-top", skin.top);
+    swatch.style.setProperty("--skin-base", skin.base);
     const rarity = document.createElement("span");
     rarity.textContent = drop.tier.toUpperCase();
     const name = document.createElement("strong");
     name.textContent = drop.name;
-    item.append(rarity, name);
-    caseInventory.append(item);
+    const details = document.createElement("div");
+    details.className = "inventory-item-details";
+    details.append(name, rarity);
+    const equipButton = document.createElement("button");
+    equipButton.className = "inventory-equip-button";
+    equipButton.type = "button";
+    equipButton.textContent = isEquipped ? "EQUIPPED" : "EQUIP";
+    equipButton.disabled = isEquipped;
+    equipButton.setAttribute("aria-pressed", String(isEquipped));
+    equipButton.addEventListener("click", function () {
+      setEquippedSkin(type, drop.name);
+      saveEconomy();
+      renderSkinInventory(type);
+    });
+    item.append(swatch, details, equipButton);
+    inventory.append(item);
   }
 }
 
-function chooseCaseTier() {
-  let roll = Math.random() * CASE_TIERS.reduce((total, tier) => total + tier.weight, 0);
-  for (const tier of CASE_TIERS) {
+function chooseCaseTier(tiers) {
+  let roll = Math.random() * tiers.reduce((total, tier) => total + tier.weight, 0);
+  for (const tier of tiers) {
     roll -= tier.weight;
     if (roll < 0) {
       return tier;
     }
   }
-  return CASE_TIERS[0];
+  return tiers[0];
 }
 
 function openCase() {
@@ -209,21 +329,24 @@ function openCase() {
     return;
   }
 
+  const type = activeCaseType;
+  const tiers = caseTiers(type);
   coins -= CASE_COST;
   saveEconomy();
   updateCoinDisplay();
   caseIsOpening = true;
   openCaseButton.disabled = true;
+  caseTypeButtons.forEach(button => { button.disabled = true; });
   caseMessage.textContent = "The case is opening...";
   caseReveal.classList.add("is-spinning");
 
-  const rewardTier = chooseCaseTier();
+  const rewardTier = chooseCaseTier(tiers);
   const rewardName = rewardTier.items[Math.floor(Math.random() * rewardTier.items.length)];
-  caseDrops.unshift({ tier: rewardTier.id, name: rewardName });
+  setOwnedDrops(type, [{ tier: rewardTier.id, name: rewardName }, ...ownedDrops(type)]);
   saveEconomy();
   let spin = 0;
   const spinTimer = window.setInterval(() => {
-    const previewTier = CASE_TIERS[spin % CASE_TIERS.length];
+    const previewTier = tiers[spin % tiers.length];
     const previewName = previewTier.items[spin % previewTier.items.length];
     caseReveal.dataset.tier = previewTier.id;
     caseRarity.textContent = previewTier.label;
@@ -236,10 +359,11 @@ function openCase() {
       caseReveal.dataset.tier = rewardTier.id;
       caseRarity.textContent = rewardTier.label;
       caseItemName.textContent = rewardName;
-      renderCaseInventory();
+      renderSkinInventory(type);
       caseMessage.textContent = `${rewardTier.label} DROP ADDED TO YOUR COLLECTION`;
       caseIsOpening = false;
       openCaseButton.disabled = false;
+      caseTypeButtons.forEach(button => { button.disabled = false; });
     }
   }, 75);
 }
@@ -260,8 +384,30 @@ document.getElementById("achievements-button").addEventListener("click", functio
 });
 
 document.getElementById("cases-button").addEventListener("click", function () {
-  caseMessage.textContent = "Earn 1 coin for every brick you break.";
+  caseMessage.textContent = "Earn 5 coins for every brick you break.";
   showMenuPage("cases-page");
+});
+
+caseTypeButtons.forEach(button => {
+  button.addEventListener("click", function () {
+    if (caseIsOpening) {
+      return;
+    }
+    activeCaseType = button.dataset.caseType;
+    caseTypeButtons.forEach(caseButton => {
+      const isActive = caseButton === button;
+      caseButton.classList.toggle("is-active", isActive);
+      caseButton.setAttribute("aria-pressed", String(isActive));
+    });
+    caseReveal.dataset.tier = "grey";
+    caseRarity.textContent = "READY";
+    caseItemName.textContent = `${activeCaseType.toUpperCase()} SKIN CASE`;
+    caseMessage.textContent = "Earn 5 coins for every brick you break.";
+  });
+});
+
+document.getElementById("inventory-button").addEventListener("click", function () {
+  showMenuPage("inventory-page");
 });
 
 document.querySelectorAll(".menu-back-button").forEach(button => {
@@ -449,7 +595,7 @@ function update() {
       comboStreak++;
       const multiplier = Math.min(5, 1 + Math.floor((comboStreak - 1) / 3));
       score += 100 * multiplier;
-      addCoins(1);
+      addCoins(5);
       updateScore();
       updateComboDisplay(multiplier);
       spawnBrickBurst(hitBrick);
@@ -855,6 +1001,27 @@ function drawBeachCourt() {
 }
 
 function drawPaddle() {
+  const skin = PADDLE_SKINS[equippedPaddleSkin];
+  if (skin) {
+    ctx.save();
+    ctx.shadowColor = skin.glow;
+    ctx.shadowBlur = 14;
+    const skinGradient = ctx.createLinearGradient(0, paddle.y, 0, paddle.y + paddle.height);
+    skinGradient.addColorStop(0, skin.top);
+    skinGradient.addColorStop(0.3, skin.base);
+    skinGradient.addColorStop(1, skin.edge);
+    ctx.fillStyle = skinGradient;
+    ctx.beginPath();
+    ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 6);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = skin.top;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
   if (currentLevel === 3) {
     ctx.shadowColor = "rgb(255 247 199 / 68%)";
@@ -900,6 +1067,42 @@ function drawBasketball(activeBall) {
   const radius = activeBall.width / 2;
   const centerX = activeBall.x + radius;
   const centerY = activeBall.y + radius;
+  const skin = BALL_SKINS[equippedBallSkin];
+  if (skin) {
+    const skinGradient = ctx.createRadialGradient(
+      centerX - radius * 0.38,
+      centerY - radius * 0.45,
+      radius * 0.1,
+      centerX,
+      centerY,
+      radius * 1.1
+    );
+    skinGradient.addColorStop(0, skin.top);
+    skinGradient.addColorStop(0.4, skin.base);
+    skinGradient.addColorStop(1, skin.edge);
+    ctx.save();
+    ctx.shadowColor = skin.glow;
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = skinGradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = skin.seam;
+    ctx.lineWidth = Math.max(1, radius * 0.14);
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.96, -Math.PI / 2, Math.PI / 2);
+    ctx.moveTo(centerX, centerY - radius);
+    ctx.arc(centerX - radius, centerY, radius, -Math.PI / 2, Math.PI / 2);
+    ctx.moveTo(centerX - radius * 0.8, centerY - radius * 0.6);
+    ctx.quadraticCurveTo(centerX + radius * 0.15, centerY, centerX - radius * 0.8, centerY + radius * 0.6);
+    ctx.moveTo(centerX + radius * 0.8, centerY - radius * 0.6);
+    ctx.quadraticCurveTo(centerX - radius * 0.15, centerY, centerX + radius * 0.8, centerY + radius * 0.6);
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
   if (currentLevel === 2) {
     ctx.fillStyle = "#171719";
     ctx.fillRect(activeBall.x, activeBall.y, activeBall.width, activeBall.height);
