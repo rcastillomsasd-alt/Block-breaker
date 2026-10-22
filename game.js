@@ -35,6 +35,9 @@ const menuPages = document.querySelectorAll(".menu-page");
 const caseReveal = document.getElementById("case-reveal");
 const caseRarity = document.getElementById("case-rarity");
 const caseItemName = document.getElementById("case-item-name");
+const caseRoundLabel = document.getElementById("case-round-label");
+const caseReelViewport = document.getElementById("case-reel-viewport");
+const caseReelTrack = document.getElementById("case-reel-track");
 const caseMessage = document.getElementById("case-message");
 const openCaseButton = document.getElementById("open-case-button");
 const paddleInventory = document.getElementById("paddle-inventory");
@@ -94,6 +97,7 @@ const ACHIEVEMENTS = [
 const ACHIEVEMENT_STORAGE_KEY = "block-breaker-achievements";
 const ECONOMY_STORAGE_KEY = "block-breaker-economy";
 const CASE_COST = 100;
+const CASE_REEL_STOP_INDEX = 24;
 let unlockedAchievements = new Set();
 const PADDLE_CASE_TIERS = [
   { id: "grey", label: "GREY", weight: 60, items: ["Court Classic", "Rookie Stripe", "Concrete Fade"] },
@@ -385,6 +389,47 @@ function chooseCaseTier(tiers) {
   return tiers[0];
 }
 
+function createCaseReelCard(type, name, tierId) {
+  const palette = skinPalette(type)[name];
+  const card = document.createElement("div");
+  card.className = `case-reel-card rarity-${tierId}`;
+  card.dataset.caseType = type;
+
+  const art = document.createElement("div");
+  art.className = "case-reel-card-art";
+  art.style.setProperty("--item-top", palette.top);
+  art.style.setProperty("--item-base", palette.base);
+  art.style.setProperty("--item-glow", palette.glow);
+
+  const label = document.createElement("div");
+  label.className = "case-reel-card-label";
+  const rarity = document.createElement("span");
+  rarity.textContent = tierId.toUpperCase();
+  const itemName = document.createElement("strong");
+  itemName.textContent = name;
+  label.append(rarity, itemName);
+  card.append(art, label);
+  return card;
+}
+
+function fillCaseReel(type, tiers, rewardTier, rewardName) {
+  const reelCards = [];
+  for (let index = 0; index <= CASE_REEL_STOP_INDEX + 3; index++) {
+    if (index === CASE_REEL_STOP_INDEX) {
+      const winningCard = createCaseReelCard(type, rewardName, rewardTier.id);
+      winningCard.classList.add("is-winner");
+      reelCards.push(winningCard);
+      continue;
+    }
+
+    const tier = chooseCaseTier(tiers);
+    const name = tier.items[Math.floor(Math.random() * tier.items.length)];
+    reelCards.push(createCaseReelCard(type, name, tier.id));
+  }
+  caseReelTrack.replaceChildren(...reelCards);
+  return reelCards[CASE_REEL_STOP_INDEX];
+}
+
 function openCase() {
   if (caseIsOpening) {
     return;
@@ -396,6 +441,8 @@ function openCase() {
 
   const type = activeCaseType;
   const tiers = caseTiers(type);
+  const rewardTier = chooseCaseTier(tiers);
+  const rewardName = rewardTier.items[Math.floor(Math.random() * rewardTier.items.length)];
   coins -= CASE_COST;
   saveEconomy();
   updateCoinDisplay();
@@ -403,34 +450,47 @@ function openCase() {
   openCaseButton.disabled = true;
   caseTypeButtons.forEach(button => { button.disabled = true; });
   caseMessage.textContent = "The case is opening...";
+  caseReveal.classList.remove("has-awarded");
+  caseReelTrack.style.transition = "none";
+  caseReelTrack.style.transform = "translateX(0px)";
+  const winningCard = fillCaseReel(type, tiers, rewardTier, rewardName);
+  caseReveal.dataset.tier = "grey";
   caseReveal.classList.add("is-spinning");
 
-  const rewardTier = chooseCaseTier(tiers);
-  const rewardName = rewardTier.items[Math.floor(Math.random() * rewardTier.items.length)];
   setOwnedDrops(type, [{ tier: rewardTier.id, name: rewardName }, ...ownedDrops(type)]);
   saveEconomy();
-  let spin = 0;
-  const spinTimer = window.setInterval(() => {
-    const previewTier = tiers[spin % tiers.length];
-    const previewName = previewTier.items[spin % previewTier.items.length];
-    caseReveal.dataset.tier = previewTier.id;
-    caseRarity.textContent = previewTier.label;
-    caseItemName.textContent = previewName;
-    spin++;
 
-    if (spin >= 18) {
-      window.clearInterval(spinTimer);
-      caseReveal.classList.remove("is-spinning");
-      caseReveal.dataset.tier = rewardTier.id;
-      caseRarity.textContent = rewardTier.label;
-      caseItemName.textContent = rewardName;
-      renderSkinInventory(type);
-      caseMessage.textContent = `${rewardTier.label} DROP ADDED TO YOUR COLLECTION`;
-      caseIsOpening = false;
-      openCaseButton.disabled = false;
-      caseTypeButtons.forEach(button => { button.disabled = false; });
-    }
-  }, 75);
+  let fallbackTimer;
+  let openingFinished = false;
+  const finishOpening = () => {
+    if (openingFinished) return;
+    openingFinished = true;
+    window.clearTimeout(fallbackTimer);
+    caseReelTrack.removeEventListener("transitionend", onReelStop);
+    caseReveal.classList.remove("is-spinning");
+    caseReveal.classList.add("has-awarded");
+    caseReveal.dataset.tier = rewardTier.id;
+    caseRarity.textContent = rewardTier.label;
+    caseItemName.textContent = rewardName;
+    renderSkinInventory(type);
+    caseMessage.textContent = `${rewardTier.label} DROP ADDED TO YOUR COLLECTION`;
+    caseIsOpening = false;
+    openCaseButton.disabled = false;
+    caseTypeButtons.forEach(button => { button.disabled = false; });
+  };
+  const onReelStop = event => {
+    if (event.propertyName === "transform") finishOpening();
+  };
+
+  caseReelTrack.addEventListener("transitionend", onReelStop);
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  fallbackTimer = window.setTimeout(finishOpening, reducedMotion ? 100 : 5600);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const markerCenter = caseReelViewport.clientWidth / 2;
+    const winningCardCenter = winningCard.offsetLeft + winningCard.offsetWidth / 2;
+    caseReelTrack.style.transition = "";
+    caseReelTrack.style.transform = `translateX(${markerCenter - winningCardCenter}px)`;
+  }));
 }
 
 function showMenuPage(pageId) {
@@ -465,6 +525,11 @@ caseTypeButtons.forEach(button => {
       caseButton.setAttribute("aria-pressed", String(isActive));
     });
     caseReveal.dataset.tier = "grey";
+    caseReveal.classList.remove("has-awarded", "is-spinning");
+    caseRoundLabel.textContent = `COLLECTION: ${activeCaseType.toUpperCase()}`;
+    caseReelTrack.replaceChildren();
+    caseReelTrack.style.transition = "none";
+    caseReelTrack.style.transform = "translateX(0px)";
     caseRarity.textContent = "READY";
     caseItemName.textContent = activeCaseType === "trail" ? "BALL TRAIL CASE" : `${activeCaseType.toUpperCase()} SKIN CASE`;
     caseMessage.textContent = "Earn 5 coins for every brick you break.";
