@@ -307,6 +307,18 @@ function loadEconomy() {
   renderSkinInventory("trail");
 }
 
+function saveProgress() {
+  saveAchievements();
+  saveEconomy();
+}
+
+window.addEventListener("pagehide", saveProgress);
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState === "hidden") {
+    saveProgress();
+  }
+});
+
 function renderSkinInventory(type) {
   const inventory = type === "ball" ? ballInventory : type === "trail" ? trailInventory : paddleInventory;
   const equippedName = type === "ball" ? equippedBallSkinName : type === "trail" ? equippedTrailName : equippedPaddleSkinName;
