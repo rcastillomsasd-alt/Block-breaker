@@ -38,6 +38,7 @@ const caseItemName = document.getElementById("case-item-name");
 const caseRoundLabel = document.getElementById("case-round-label");
 const caseReelViewport = document.getElementById("case-reel-viewport");
 const caseReelTrack = document.getElementById("case-reel-track");
+const caseSoundButton = document.getElementById("case-sound-button");
 const caseMessage = document.getElementById("case-message");
 const openCaseButton = document.getElementById("open-case-button");
 const paddleInventory = document.getElementById("paddle-inventory");
@@ -84,6 +85,9 @@ let paddleDrops = [];
 let ballDrops = [];
 let trailDrops = [];
 let caseIsOpening = false;
+let caseSoundEnabled = true;
+let caseAudioContext = null;
+let caseRollTimer = null;
 let equippedPaddleSkin = null;
 let equippedBallSkin = null;
 let equippedTrail = null;
@@ -430,6 +434,76 @@ function fillCaseReel(type, tiers, rewardTier, rewardName) {
   return reelCards[CASE_REEL_STOP_INDEX];
 }
 
+function getCaseAudioContext() {
+  if (!caseSoundEnabled) return null;
+  const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextConstructor) return null;
+  if (!caseAudioContext) caseAudioContext = new AudioContextConstructor();
+  if (caseAudioContext.state === "suspended") caseAudioContext.resume().catch(() => {});
+  return caseAudioContext;
+}
+
+function playCaseTick(progress) {
+  const audioContext = getCaseAudioContext();
+  if (!audioContext) return;
+
+  const startTime = audioContext.currentTime;
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  oscillator.type = "triangle";
+  oscillator.frequency.setValueAtTime(1480 - progress * 570, startTime);
+  oscillator.frequency.exponentialRampToValueAtTime(490 - progress * 120, startTime + 0.025);
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.055, startTime + 0.002);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.04);
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+  oscillator.start(startTime);
+  oscillator.stop(startTime + 0.042);
+}
+
+function startCaseRollSound() {
+  window.clearTimeout(caseRollTimer);
+  if (!caseSoundEnabled || !getCaseAudioContext()) return;
+  const startedAt = performance.now();
+  const duration = 5200;
+  const playNextTick = () => {
+    if (!caseIsOpening || !caseSoundEnabled) return;
+    const progress = Math.min((performance.now() - startedAt) / duration, 1);
+    playCaseTick(progress);
+    if (progress < 1) {
+      caseRollTimer = window.setTimeout(playNextTick, 35 + progress ** 2 * 520);
+    }
+  };
+  playNextTick();
+}
+
+function stopCaseRollSound() {
+  window.clearTimeout(caseRollTimer);
+  caseRollTimer = null;
+}
+
+function playCaseResultSound(tierId) {
+  const audioContext = getCaseAudioContext();
+  if (!audioContext) return;
+  const startTime = audioContext.currentTime;
+  const notes = tierId === "gold" ? [660, 880, 1320] : tierId === "purple" ? [520, 780] : [440, 660];
+  notes.forEach((frequency, index) => {
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    const noteStart = startTime + index * 0.09;
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency, noteStart);
+    gain.gain.setValueAtTime(0.0001, noteStart);
+    gain.gain.exponentialRampToValueAtTime(0.06, noteStart + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.26);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start(noteStart);
+    oscillator.stop(noteStart + 0.27);
+  });
+}
+
 function openCase() {
   if (caseIsOpening) {
     return;
@@ -466,6 +540,8 @@ function openCase() {
     if (openingFinished) return;
     openingFinished = true;
     window.clearTimeout(fallbackTimer);
+    stopCaseRollSound();
+    playCaseResultSound(rewardTier.id);
     caseReelTrack.removeEventListener("transitionend", onReelStop);
     caseReveal.classList.remove("is-spinning");
     caseReveal.classList.add("has-awarded");
@@ -491,6 +567,7 @@ function openCase() {
     caseReelTrack.style.transition = "";
     caseReelTrack.style.transform = `translateX(${markerCenter - winningCardCenter}px)`;
   }));
+    startCaseRollSound();
 }
 
 function showMenuPage(pageId) {
@@ -547,6 +624,12 @@ document.querySelectorAll(".menu-back-button").forEach(button => {
 });
 
 openCaseButton.addEventListener("click", openCase);
+caseSoundButton.addEventListener("click", function () {
+  caseSoundEnabled = !caseSoundEnabled;
+  caseSoundButton.setAttribute("aria-pressed", String(caseSoundEnabled));
+  caseSoundButton.textContent = caseSoundEnabled ? "SOUND ON" : "SOUND OFF";
+  if (!caseSoundEnabled) stopCaseRollSound();
+});
 
 document.getElementById("menu-button").addEventListener("click", function () {
   gameState = "menu";
