@@ -509,13 +509,13 @@ function playCaseTick(progress) {
   filter.frequency.setValueAtTime(2300 - progress * 720, startTime);
   filter.Q.setValueAtTime(caseRollTickIndex % 2 === 0 ? 1.1 : 0.72, startTime);
   noiseGain.gain.setValueAtTime(0.0001, startTime);
-  noiseGain.gain.exponentialRampToValueAtTime(0.045, startTime + 0.002);
+  noiseGain.gain.exponentialRampToValueAtTime(0.085, startTime + 0.002);
   noiseGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.032);
   oscillator.type = caseRollTickIndex % 2 === 0 ? "triangle" : "sine";
   oscillator.frequency.setValueAtTime(1540 - progress * 620 + pitchVariation, startTime);
   oscillator.frequency.exponentialRampToValueAtTime(560 - progress * 140, startTime + 0.026);
   gain.gain.setValueAtTime(0.0001, startTime);
-  gain.gain.exponentialRampToValueAtTime(0.025, startTime + 0.002);
+  gain.gain.exponentialRampToValueAtTime(0.04, startTime + 0.002);
   gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.035);
   noise.connect(filter);
   filter.connect(noiseGain);
