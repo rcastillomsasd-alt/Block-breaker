@@ -25,6 +25,31 @@ main.game-layout {
   gap: 24px;
 }
 
+.game-menu-button {
+  position: fixed;
+  z-index: 10;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 50%;
+  min-height: 38px;
+  padding: 0 18px;
+  border: 1px solid rgb(255 255 255 / 38%);
+  background: #171518;
+  color: #f6f1ed;
+  cursor: pointer;
+  font: bold 10px "Courier New", monospace;
+  transform: translateX(-50%);
+}
+
+.game-menu-button:hover,
+.game-menu-button:focus-visible {
+  border-color: #ff625f;
+  color: #ff8589;
+}
+
+.game-menu-button[hidden] {
+  display: none;
+}
+
 .life-rail {
   min-height: 390px;
   display: flex;
@@ -486,20 +511,25 @@ canvas {
 
 .case-reveal {
   --reveal-accent: #c4ccd0;
-  position: relative;
-  display: grid;
-  min-height: 286px;
-  align-content: start;
-  gap: 10px;
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: none;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 18px;
   overflow: hidden;
-  padding: 14px;
-  margin-bottom: 14px;
-  border: 1px solid rgb(255 255 255 / 17%);
-  border-top: 2px solid var(--reveal-accent);
+  padding: clamp(16px, 4vw, 48px);
   background:
-    radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--reveal-accent) 12%, transparent), transparent 68%),
-    repeating-linear-gradient(135deg, rgb(255 255 255 / 2%) 0 8px, transparent 8px 16px),
-    #101719;
+    radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--reveal-accent) 17%, transparent), transparent 58%),
+    repeating-linear-gradient(0deg, transparent 0 42px, rgb(255 255 255 / 2%) 43px 44px),
+    repeating-linear-gradient(90deg, transparent 0 42px, rgb(255 255 255 / 2%) 43px 44px),
+    #090d0e;
+  isolation: isolate;
+}
+
+.case-reveal.is-spinning,
+.case-reveal.has-awarded {
+  display: grid;
 }
 
 .case-reveal[data-tier="blue"] { --reveal-accent: #55a9ff; }
@@ -507,6 +537,8 @@ canvas {
 .case-reveal[data-tier="gold"] { --reveal-accent: #ffd166; }
 
 .case-stage-heading {
+  position: relative;
+  z-index: 3;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -549,16 +581,16 @@ canvas {
 }
 
 .case-basement {
-  position: relative;
-  height: 76px;
+  position: absolute;
+  z-index: 0;
+  inset: 0;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 12%);
   background:
-    radial-gradient(ellipse at 50% 28%, rgb(218 179 117 / 20%), transparent 45%),
-    repeating-linear-gradient(0deg, transparent 0 17px, rgb(0 0 0 / 28%) 18px 20px),
-    repeating-linear-gradient(90deg, transparent 0 46px, rgb(0 0 0 / 20%) 47px 49px),
-    linear-gradient(180deg, #303532 0%, #242b29 64%, #171d1c 65%);
-  perspective: 260px;
+    radial-gradient(ellipse at 50% 48%, rgb(218 179 117 / 13%), transparent 35%),
+    repeating-linear-gradient(0deg, transparent 0 54px, rgb(0 0 0 / 32%) 55px 59px),
+    repeating-linear-gradient(90deg, transparent 0 76px, rgb(0 0 0 / 25%) 77px 82px),
+    linear-gradient(180deg, #303532 0%, #242b29 72%, #171d1c 73%);
+  perspective: 800px;
 }
 
 .case-basement::before {
@@ -579,7 +611,11 @@ canvas {
 }
 
 .case-reveal.is-spinning .case-basement::after {
-  animation: case-unseal-flash 850ms ease-out both;
+  animation: case-unseal-flash 850ms 900ms ease-out both;
+}
+
+.case-reveal.is-spinning .case-basement {
+  animation: case-basement-shake 850ms 300ms ease-in-out both;
 }
 
 .basement-pipe,
@@ -593,17 +629,17 @@ canvas {
 }
 
 .basement-pipe {
-  top: 10px;
-  right: -4px;
-  left: -4px;
-  height: 7px;
+  top: 14%;
+  right: -8px;
+  left: -8px;
+  height: 14px;
 }
 
 .basement-upright {
-  top: 12px;
+  top: 15%;
   left: 18%;
-  width: 6px;
-  height: 44px;
+  width: 12px;
+  height: 68%;
 }
 
 .basement-floor {
@@ -612,7 +648,7 @@ canvas {
   right: 0;
   bottom: 0;
   left: 0;
-  height: 13px;
+  height: 9%;
   border-top: 1px solid #69716a;
   background: linear-gradient(180deg, #3b423d, #171c1b);
 }
@@ -620,13 +656,14 @@ canvas {
 .case-prop {
   position: absolute;
   z-index: 2;
-  bottom: 9px;
+  top: 44%;
+  bottom: auto;
   left: 50%;
   display: block;
-  width: 72px;
-  height: 43px;
-  transform: translateX(-50%);
-  filter: drop-shadow(0 5px 4px rgb(0 0 0 / 55%));
+  width: clamp(150px, 24vw, 280px);
+  height: clamp(90px, 15vw, 170px);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 18px 15px rgb(0 0 0 / 65%));
 }
 
 .case-prop-body,
@@ -641,7 +678,7 @@ canvas {
 
 .case-prop-body {
   bottom: 0;
-  height: 31px;
+  height: 72%;
   box-shadow: inset 0 0 0 3px rgb(10 14 13 / 36%);
 }
 
@@ -659,9 +696,9 @@ canvas {
 .case-prop-body::after { right: 10px; }
 
 .case-prop-lid {
-  top: 1px;
+  top: 1%;
   z-index: 1;
-  height: 12px;
+  height: 28%;
   transform-origin: left bottom;
   background: linear-gradient(90deg, #b48c55, #e0bd7b 48%, #997346);
 }
@@ -669,10 +706,10 @@ canvas {
 .case-prop-lock {
   position: absolute;
   z-index: 2;
-  top: 19px;
+  top: 48%;
   left: 50%;
-  width: 9px;
-  height: 11px;
+  width: 9%;
+  height: 21%;
   border: 1px solid #dfc58c;
   background: #27302e;
   transform: translateX(-50%);
@@ -683,7 +720,7 @@ canvas {
 }
 
 .case-reveal.is-spinning .case-prop-lid {
-  animation: case-prop-open 600ms 180ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  animation: case-prop-open 600ms 1.05s cubic-bezier(0.2, 0.75, 0.25, 1) both;
 }
 
 .case-reveal.has-awarded .case-prop-lid {
@@ -692,7 +729,11 @@ canvas {
 
 .case-reel-viewport {
   position: relative;
-  height: 112px;
+  z-index: 3;
+  align-self: end;
+  width: 100%;
+  height: clamp(112px, 19vh, 170px);
+  margin-top: auto;
   overflow: hidden;
   border: 1px solid rgb(255 255 255 / 13%);
   background: linear-gradient(180deg, #080d0f, #151e20 50%, #080d0f);
@@ -785,7 +826,15 @@ canvas {
   place-items: center;
   background:
     linear-gradient(145deg, color-mix(in srgb, var(--item-top) 55%, transparent), transparent 56%),
-    linear-gradient(120deg, #111719, var(--item-base));
+    var(--item-finish, linear-gradient(120deg, #111719, var(--item-base)));
+}
+
+.case-reel-card-art[data-effect]::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 28%, rgb(255 255 255 / 48%) 48%, transparent 68%);
+  content: "";
+  animation: case-skin-sheen 2.8s ease-in-out infinite;
 }
 
 .case-reel-card-art::before {
@@ -849,16 +898,18 @@ canvas {
 }
 
 .case-reveal-result {
-  display: flex;
-  min-height: 18px;
-  align-items: baseline;
-  justify-content: space-between;
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 42px;
+  justify-items: center;
+  align-content: center;
   gap: 10px;
   font-family: "Courier New", monospace;
 }
 
 .case-reveal-result span {
-  flex: 0 0 auto;
   color: var(--reveal-accent);
   font-size: 9px;
   font-weight: bold;
@@ -867,8 +918,43 @@ canvas {
 .case-reveal-result strong {
   overflow-wrap: anywhere;
   color: #f4f6f0;
-  font-size: 11px;
-  text-align: right;
+  font-size: clamp(14px, 2.5vw, 22px);
+  text-align: center;
+}
+
+.case-reward-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.case-reward-actions[hidden] {
+  display: none;
+}
+
+.case-reward-actions button {
+  min-width: 150px;
+  min-height: 44px;
+  padding: 0 18px;
+  background: #111719;
+  cursor: pointer;
+  font: bold 10px "Courier New", monospace;
+}
+
+.case-sell-button {
+  border: 1px solid #ffd166;
+  color: #ffd166;
+}
+
+.case-keep-button {
+  border: 1px solid #58d4c5;
+  color: #58d4c5;
+}
+
+.case-reward-actions button:hover,
+.case-reward-actions button:focus-visible {
+  background: var(--reveal-accent);
+  color: #101719;
 }
 
 .case-reveal.is-spinning {
@@ -877,6 +963,10 @@ canvas {
 
 .case-reveal.is-spinning .case-stage-lamp {
   animation: case-pulse 0.45s ease-in-out infinite alternate;
+}
+
+.case-reveal.is-spinning .case-reel-viewport {
+  animation: case-reel-arrive 450ms 1.05s ease-out both;
 }
 
 .case-reveal.has-awarded .case-reel-card.is-winner {
@@ -920,9 +1010,9 @@ canvas {
 }
 
 @keyframes case-prop-pop {
-  0% { opacity: 0; transform: translate(-50%, 15px) scale(0.72); }
-  65% { opacity: 1; transform: translate(-50%, -3px) scale(1.05); }
-  100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  0% { opacity: 0; transform: translate(-50%, calc(-50% + 35px)) scale(0.72); }
+  65% { opacity: 1; transform: translate(-50%, calc(-50% - 5px)) scale(1.05); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 @keyframes case-prop-open {
@@ -936,11 +1026,32 @@ canvas {
   100% { opacity: 0; transform: scale(1.35); }
 }
 
+@keyframes case-basement-shake {
+  0%, 100% { transform: translate(0); }
+  18% { transform: translate(-8px, 3px); }
+  36% { transform: translate(7px, -3px); }
+  54% { transform: translate(-5px, 2px); }
+  72% { transform: translate(3px, -1px); }
+}
+
+@keyframes case-reel-arrive {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes case-skin-sheen {
+  0%, 25% { transform: translateX(-120%); }
+  70%, 100% { transform: translateX(120%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .case-reel-track { transition-duration: 0.01ms; }
   .case-reveal.has-awarded .case-reel-card.is-winner,
   .case-reveal.is-spinning .case-stage-lamp,
-  .case-reveal.is-spinning .case-prop { animation: none; }
+  .case-reveal.is-spinning .case-prop,
+  .case-reveal.is-spinning .case-basement,
+  .case-reveal.is-spinning .case-reel-viewport,
+  .case-reel-card-art[data-effect]::after { animation: none; }
   .case-reveal.is-spinning .case-prop-lid,
   .case-reveal.has-awarded .case-prop-lid { transform: rotateX(-68deg) translateY(-2px); }
 }
@@ -1585,6 +1696,8 @@ body.minecraft-level kbd {
   .case-stage-heading { gap: 5px; font-size: 8px; }
   .case-stage-heading #case-round-label { font-size: 7px; }
   .case-sound-button { padding: 4px; font-size: 7px; }
+  .case-reward-actions { width: 100%; gap: 8px; }
+  .case-reward-actions button { min-width: 0; flex: 1; padding: 0 8px; font-size: 9px; }
 }
 
 @media (min-width: 521px) and (max-width: 760px) {

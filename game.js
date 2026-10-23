@@ -29,6 +29,7 @@ const comboDisplay = document.getElementById("combo-display");
 const achievementCount = document.getElementById("achievement-count");
 const achievementToast = document.getElementById("achievement-toast");
 const titleScreen = document.getElementById("title-screen");
+const gameMenuButton = document.getElementById("game-menu-button");
 const menuCoinCount = document.getElementById("menu-coin-count");
 const coinCount = document.getElementById("coin-count");
 const menuPages = document.querySelectorAll(".menu-page");
@@ -41,6 +42,9 @@ const caseReelTrack = document.getElementById("case-reel-track");
 const caseSoundButton = document.getElementById("case-sound-button");
 const caseMessage = document.getElementById("case-message");
 const openCaseButton = document.getElementById("open-case-button");
+const caseRewardActions = document.getElementById("case-reward-actions");
+const caseSellButton = document.getElementById("case-sell-button");
+const caseKeepButton = document.getElementById("case-keep-button");
 const paddleInventory = document.getElementById("paddle-inventory");
 const ballInventory = document.getElementById("ball-inventory");
 const trailInventory = document.getElementById("trail-inventory");
@@ -85,6 +89,7 @@ let paddleDrops = [];
 let ballDrops = [];
 let trailDrops = [];
 let caseIsOpening = false;
+let pendingCaseDrop = null;
 let caseSoundEnabled = true;
 let caseAudioContext = null;
 let caseRollFrame = null;
@@ -105,10 +110,10 @@ const CASE_COST = 100;
 const CASE_REEL_STOP_INDEX = 24;
 let unlockedAchievements = new Set();
 const PADDLE_CASE_TIERS = [
-  { id: "grey", label: "GREY", weight: 60, items: ["Court Classic", "Rookie Stripe", "Concrete Fade"] },
-  { id: "blue", label: "BLUE", weight: 30, items: ["Fast Break", "Neon Cross", "Skyline Slam"] },
-  { id: "purple", label: "PURPLE", weight: 15, items: ["Night League", "Royal Rumble", "Violet Voltage"] },
-  { id: "gold", label: "GOLD", weight: 3, items: ["Golden Legend", "Championship Glow", "Crown Jewel", "Galaxy Gold"] }
+  { id: "grey", label: "GREY", weight: 60, items: ["Court Classic", "Rookie Stripe", "Concrete Fade", "Baseline", "Marble Court"] },
+  { id: "blue", label: "BLUE", weight: 30, items: ["Fast Break", "Neon Cross", "Skyline Slam", "Heat Check", "Pixel Dunk"] },
+  { id: "purple", label: "PURPLE", weight: 15, items: ["Night League", "Royal Rumble", "Violet Voltage", "Court Phantom", "Electric Crown"] },
+  { id: "gold", label: "GOLD", weight: 3, items: ["Golden Legend", "Championship Glow", "Crown Jewel", "Galaxy Gold", "Ember Dynasty", "Starbound MVP"] }
 ];
 const PADDLE_SKINS = {
   "Court Classic": { top: "#fff1e8", base: "#e43a43", edge: "#7c101c", glow: "#e43a43" },
@@ -120,16 +125,24 @@ const PADDLE_SKINS = {
   "Night League": { top: "#e9ddff", base: "#7152a9", edge: "#302345", glow: "#9b75db" },
   "Royal Rumble": { top: "#ffe89c", base: "#9f3d85", edge: "#461c57", glow: "#d175c1" },
   "Violet Voltage": { top: "#ffa9ef", base: "#973bd1", edge: "#45156b", glow: "#c65bec" },
-  "Golden Legend": { top: "#fff2ac", base: "#493072", edge: "#18132f", glow: "#ffd166", effect: "galaxy", colors: ["#fff0a6", "#ffbd45", "#a448a0", "#3c286d", "#10152f", "#59dce2"] },
-  "Championship Glow": { top: "#fff3b0", base: "#a53669", edge: "#351c58", glow: "#71edff", effect: "aurora", colors: ["#fff4aa", "#ff8f58", "#ec4f9a", "#704bd0", "#39d5ca"] },
-  "Crown Jewel": { top: "#fff6c5", base: "#b96528", edge: "#532248", glow: "#ffd166", effect: "prism", colors: ["#fff1a8", "#e89934", "#db5684", "#7446a6", "#4bd0bd"] },
-  "Galaxy Gold": { top: "#fff1a6", base: "#422568", edge: "#11132e", glow: "#ffd166", effect: "galaxy", colors: ["#fff2a8", "#ffb63e", "#f05b9c", "#7146bd", "#151a42", "#54e4e2"] }
+  "Court Phantom": { top: "#d4f9ff", base: "#354d76", edge: "#17243e", glow: "#54d8ff", effect: "aurora", colors: ["#d4f9ff", "#54d8ff", "#354d76"] },
+  "Electric Crown": { top: "#ffe2fb", base: "#7b39bd", edge: "#34165a", glow: "#ed5aff", effect: "prism", colors: ["#ffe2fb", "#ed5aff", "#5f37d2"] },
+  "Golden Legend": { top: "#fff2ac", base: "#493072", edge: "#18132f", glow: "#ffd166", effect: "galaxy", sellValue: 2000, colors: ["#fff0a6", "#ffbd45", "#a448a0", "#3c286d", "#10152f", "#59dce2"] },
+  "Championship Glow": { top: "#fff3b0", base: "#a53669", edge: "#351c58", glow: "#71edff", effect: "aurora", sellValue: 1250, colors: ["#fff4aa", "#ff8f58", "#ec4f9a", "#704bd0", "#39d5ca"] },
+  "Crown Jewel": { top: "#fff6c5", base: "#b96528", edge: "#532248", glow: "#ffd166", effect: "prism", sellValue: 1500, colors: ["#fff1a8", "#e89934", "#db5684", "#7446a6", "#4bd0bd"] },
+  "Galaxy Gold": { top: "#fff1a6", base: "#422568", edge: "#11132e", glow: "#ffd166", effect: "galaxy", sellValue: 1800, colors: ["#fff2a8", "#ffb63e", "#f05b9c", "#7146bd", "#151a42", "#54e4e2"] },
+  "Ember Dynasty": { top: "#fff0bf", base: "#bd482f", edge: "#542044", glow: "#ffac45", effect: "aurora", sellValue: 500, colors: ["#fff0bf", "#ffc247", "#f05b52", "#762c77"] },
+  "Starbound MVP": { top: "#fff8d5", base: "#225b89", edge: "#172447", glow: "#63efff", effect: "galaxy", sellValue: 1000, colors: ["#fff8d5", "#ffd166", "#ff69ad", "#553db2", "#225b89", "#63efff"] },
+  "Baseline": { top: "#fbf3de", base: "#718b88", edge: "#324a4c", glow: "#bde4d6", colors: ["#fbf3de", "#bde4d6", "#718b88"] },
+  "Marble Court": { top: "#f5f8ff", base: "#63849e", edge: "#26394e", glow: "#9ce5ed", colors: ["#f5f8ff", "#9ce5ed", "#63849e"] },
+  "Heat Check": { top: "#fff0bb", base: "#ed4b38", edge: "#711e35", glow: "#ff9a43", colors: ["#fff0bb", "#ff9a43", "#ed4b38"] },
+  "Pixel Dunk": { top: "#e0f8ff", base: "#3669d8", edge: "#202d7a", glow: "#76eaff", effect: "prism", colors: ["#e0f8ff", "#76eaff", "#4775ff", "#a04bda"] }
 };
 const BALL_CASE_TIERS = [
-  { id: "grey", label: "GREY", weight: 60, items: ["Street Orange", "Cloud Break", "Concrete Spin"] },
-  { id: "blue", label: "BLUE", weight: 30, items: ["Blue Orbit", "Neon Bounce", "Tidal Flight"] },
-  { id: "purple", label: "PURPLE", weight: 15, items: ["Night Circuit", "Royal Spin", "Violet Arc"] },
-  { id: "gold", label: "GOLD", weight: 3, items: ["Solar Crown", "Golden Flight", "Prism Dunk", "Galaxy Gold"] }
+  { id: "grey", label: "GREY", weight: 60, items: ["Street Orange", "Cloud Break", "Concrete Spin", "Sunset Bounce", "Ice Breaker"] },
+  { id: "blue", label: "BLUE", weight: 30, items: ["Blue Orbit", "Neon Bounce", "Tidal Flight", "Comet Drive", "Volt Runner"] },
+  { id: "purple", label: "PURPLE", weight: 15, items: ["Night Circuit", "Royal Spin", "Violet Arc", "Deep Space", "Eclipse Core"] },
+  { id: "gold", label: "GOLD", weight: 3, items: ["Solar Crown", "Golden Flight", "Prism Dunk", "Galaxy Gold", "Nova Monarch", "Celestial Slam"] }
 ];
 const BALL_SKINS = {
   "Street Orange": { top: "#ffd28a", base: "#e98232", edge: "#873715", seam: "#542312", glow: "#e98232" },
@@ -141,16 +154,24 @@ const BALL_SKINS = {
   "Night Circuit": { top: "#d8caff", base: "#7056a9", edge: "#302449", seam: "#211a35", glow: "#a07fe0" },
   "Royal Spin": { top: "#ffdcaa", base: "#a84b8c", edge: "#4c275f", seam: "#311b40", glow: "#d981bd" },
   "Violet Arc": { top: "#ffc4ef", base: "#a23bd1", edge: "#45156b", seam: "#32104c", glow: "#d365f0" },
-  "Solar Crown": { top: "#fff0a6", base: "#6b347c", edge: "#21143d", seam: "#21143d", glow: "#ffd166", effect: "galaxy", colors: ["#fff4ac", "#ffb63e", "#e7549a", "#7047c0", "#101935", "#62e4df"] },
-  "Golden Flight": { top: "#fff3b8", base: "#bd5429", edge: "#48204b", seam: "#32183d", glow: "#ffdc55", effect: "aurora", colors: ["#fff4b3", "#ff9e44", "#ef527e", "#7855d7", "#43d8c9"] },
-  "Prism Dunk": { top: "#baffdf", base: "#31a889", edge: "#14535b", seam: "#103746", glow: "#5ee1b5", effect: "prism", colors: ["#fff2aa", "#ff9b56", "#e84f9e", "#7455d7", "#45dfca"] },
-  "Galaxy Gold": { top: "#fff1a6", base: "#593478", edge: "#171631", seam: "#100e28", glow: "#ffd166", effect: "galaxy", colors: ["#fff2a8", "#ffb63e", "#f05b9c", "#7146bd", "#151a42", "#54e4e2"] }
+  "Deep Space": { top: "#d9d8ff", base: "#443e9b", edge: "#201a54", seam: "#17123b", glow: "#8d82ff", effect: "galaxy", colors: ["#d9d8ff", "#8d82ff", "#443e9b"] },
+  "Eclipse Core": { top: "#ffdcf6", base: "#9a376f", edge: "#4d1b4c", seam: "#36143a", glow: "#ff6fd3", effect: "prism", colors: ["#ffdcf6", "#ff6fd3", "#793dc4"] },
+  "Solar Crown": { top: "#fff0a6", base: "#6b347c", edge: "#21143d", seam: "#21143d", glow: "#ffd166", effect: "galaxy", sellValue: 2000, colors: ["#fff4ac", "#ffb63e", "#e7549a", "#7047c0", "#101935", "#62e4df"] },
+  "Golden Flight": { top: "#fff3b8", base: "#bd5429", edge: "#48204b", seam: "#32183d", glow: "#ffdc55", effect: "aurora", sellValue: 1250, colors: ["#fff4b3", "#ff9e44", "#ef527e", "#7855d7", "#43d8c9"] },
+  "Prism Dunk": { top: "#baffdf", base: "#31a889", edge: "#14535b", seam: "#103746", glow: "#5ee1b5", effect: "prism", sellValue: 1500, colors: ["#fff2aa", "#ff9b56", "#e84f9e", "#7455d7", "#45dfca"] },
+  "Galaxy Gold": { top: "#fff1a6", base: "#593478", edge: "#171631", seam: "#100e28", glow: "#ffd166", effect: "galaxy", sellValue: 1800, colors: ["#fff2a8", "#ffb63e", "#f05b9c", "#7146bd", "#151a42", "#54e4e2"] },
+  "Nova Monarch": { top: "#fff6c8", base: "#753fae", edge: "#31194d", seam: "#201239", glow: "#f9c954", effect: "galaxy", sellValue: 500, colors: ["#fff6c8", "#f9c954", "#e75cb4", "#753fae", "#48d9e0"] },
+  "Celestial Slam": { top: "#fff3c5", base: "#176e78", edge: "#123a54", seam: "#102a41", glow: "#75f1d5", effect: "aurora", sellValue: 1000, colors: ["#fff3c5", "#f6bd55", "#ed6a84", "#6a54c8", "#176e78"] },
+  "Sunset Bounce": { top: "#fff0d0", base: "#dc6544", edge: "#733746", seam: "#52273b", glow: "#ffad61", colors: ["#fff0d0", "#ffad61", "#dc6544"] },
+  "Ice Breaker": { top: "#f5ffff", base: "#6fb9c8", edge: "#315f7a", seam: "#24455f", glow: "#b0f8ff", colors: ["#f5ffff", "#b0f8ff", "#6fb9c8"] },
+  "Comet Drive": { top: "#e5fbff", base: "#277cc6", edge: "#193e87", seam: "#122a60", glow: "#62dfff", effect: "aurora", colors: ["#e5fbff", "#62dfff", "#277cc6"] },
+  "Volt Runner": { top: "#f4ffc2", base: "#6caa32", edge: "#36571d", seam: "#294319", glow: "#baff54", effect: "prism", colors: ["#f4ffc2", "#baff54", "#35c6a1"] }
 };
 const TRAIL_CASE_TIERS = [
-  { id: "grey", label: "GREY", weight: 60, items: ["Comet Dust", "Afterimage", "Stardust"] },
-  { id: "blue", label: "BLUE", weight: 30, items: ["Neon Circuit", "Tidal Wake", "Blue Streak"] },
-  { id: "purple", label: "PURPLE", weight: 15, items: ["Nebula Wake", "Witchlight", "Violet Spiral"] },
-  { id: "gold", label: "GOLD", weight: 3, items: ["Galaxy Gold Trail", "Solar Flare", "Prismatic Comet"] }
+  { id: "grey", label: "GREY", weight: 60, items: ["Comet Dust", "Afterimage", "Stardust", "Dust Devil", "Carbon Echo"] },
+  { id: "blue", label: "BLUE", weight: 30, items: ["Neon Circuit", "Tidal Wake", "Blue Streak", "Pulse Runner", "Glacier Arc"] },
+  { id: "purple", label: "PURPLE", weight: 15, items: ["Nebula Wake", "Witchlight", "Violet Spiral", "Phantom Loop", "Laser Bloom"] },
+  { id: "gold", label: "GOLD", weight: 3, items: ["Galaxy Gold Trail", "Solar Flare", "Prismatic Comet", "Aurora Burst", "King's Ransom Trail"] }
 ];
 const BALL_TRAILS = {
   "Comet Dust": { top: "#fff1c0", base: "#e98232", glow: "#ffb253", colors: ["#fff1c0", "#ffb253", "#e98232"], shape: "spark" },
@@ -162,9 +183,17 @@ const BALL_TRAILS = {
   "Nebula Wake": { top: "#ffc5fa", base: "#a749ee", glow: "#dc72ff", colors: ["#ffd3f8", "#dc72ff", "#725bff"], shape: "galaxy" },
   "Witchlight": { top: "#e8d1ff", base: "#8651ca", glow: "#c69bff", colors: ["#f0d8ff", "#c69bff", "#7458ed"], shape: "spark" },
   "Violet Spiral": { top: "#ffc5ef", base: "#b842d6", glow: "#f17de7", colors: ["#ffe1f6", "#f17de7", "#734fff"], shape: "ring" },
-  "Galaxy Gold Trail": { top: "#fff0a6", base: "#704bd5", glow: "#ffd166", colors: ["#fff1a6", "#ffd166", "#ff67ba", "#8a5cff", "#54e4e2"], shape: "galaxy" },
-  "Solar Flare": { top: "#fff3b3", base: "#f36e35", glow: "#ffe27a", colors: ["#fff8c2", "#ffe27a", "#ff8a3d", "#f04c68"], shape: "spark" },
-  "Prismatic Comet": { top: "#fff0b0", base: "#e64f9f", glow: "#ffd166", colors: ["#fff0b0", "#68f0df", "#7f6aff", "#f45cc5"], shape: "ring" }
+  "Phantom Loop": { top: "#dbd6ff", base: "#5b4cc3", glow: "#a99cff", colors: ["#dbd6ff", "#a99cff", "#5b4cc3"], shape: "galaxy" },
+  "Laser Bloom": { top: "#ffd7f7", base: "#bd3d9b", glow: "#ff68d8", colors: ["#fff0f9", "#ff68d8", "#8a50ef"], shape: "ring" },
+  "Galaxy Gold Trail": { top: "#fff0a6", base: "#704bd5", glow: "#ffd166", sellValue: 2000, colors: ["#fff1a6", "#ffd166", "#ff67ba", "#8a5cff", "#54e4e2"], shape: "galaxy" },
+  "Solar Flare": { top: "#fff3b3", base: "#f36e35", glow: "#ffe27a", sellValue: 1250, colors: ["#fff8c2", "#ffe27a", "#ff8a3d", "#f04c68"], shape: "spark" },
+  "Prismatic Comet": { top: "#fff0b0", base: "#e64f9f", glow: "#ffd166", sellValue: 1500, colors: ["#fff0b0", "#68f0df", "#7f6aff", "#f45cc5"], shape: "ring" },
+  "Aurora Burst": { top: "#e4fff5", base: "#348a8e", glow: "#a4ffcf", sellValue: 500, colors: ["#fff2bd", "#8dffd5", "#48b9c2", "#7657d9"], shape: "spark" },
+  "King's Ransom Trail": { top: "#fff4c5", base: "#a66b21", glow: "#ffd166", sellValue: 1000, colors: ["#fff4c5", "#ffd166", "#ec8f3f", "#bb4d8d"], shape: "star" },
+  "Dust Devil": { top: "#ffe0bd", base: "#a6744d", glow: "#e5b181", colors: ["#fff0de", "#e5b181", "#a6744d"], shape: "spark" },
+  "Carbon Echo": { top: "#f0f4f3", base: "#586c70", glow: "#b1d6d5", colors: ["#f0f4f3", "#b1d6d5", "#586c70"], shape: "ring" },
+  "Pulse Runner": { top: "#d8fff5", base: "#20a9bb", glow: "#69f5e6", colors: ["#e7ffcf", "#69f5e6", "#2785e0"], shape: "square" },
+  "Glacier Arc": { top: "#f3ffff", base: "#469bc1", glow: "#adf5ff", colors: ["#f3ffff", "#adf5ff", "#469bc1"], shape: "ring" }
 };
 
 function caseTiers(type) {
@@ -177,6 +206,13 @@ function skinPalette(type) {
   if (type === "ball") return BALL_SKINS;
   if (type === "trail") return BALL_TRAILS;
   return PADDLE_SKINS;
+}
+
+function caseSellValue(drop) {
+  if (drop.tier === "grey") return 30;
+  if (drop.tier === "blue") return 80;
+  if (drop.tier === "purple") return 180;
+  return skinPalette(drop.type)[drop.name].sellValue;
 }
 
 function ownedDrops(type) {
@@ -405,6 +441,10 @@ function createCaseReelCard(type, name, tierId) {
   art.style.setProperty("--item-top", palette.top);
   art.style.setProperty("--item-base", palette.base);
   art.style.setProperty("--item-glow", palette.glow);
+  if (palette.colors) {
+    art.style.setProperty("--item-finish", `linear-gradient(110deg, ${palette.colors.join(", ")})`);
+  }
+  if (palette.effect) art.dataset.effect = palette.effect;
 
   const label = document.createElement("div");
   label.className = "case-reel-card-label";
@@ -579,6 +619,7 @@ function openCase() {
   caseIsOpening = true;
   openCaseButton.disabled = true;
   caseTypeButtons.forEach(button => { button.disabled = true; });
+  caseRewardActions.hidden = true;
   caseMessage.textContent = "The case is opening...";
   caseReveal.classList.remove("has-awarded");
   caseReelTrack.style.transition = "none";
@@ -586,9 +627,8 @@ function openCase() {
   const winningCard = fillCaseReel(type, tiers, rewardTier, rewardName);
   caseReveal.dataset.tier = "grey";
   caseReveal.classList.add("is-spinning");
-
-  setOwnedDrops(type, [{ tier: rewardTier.id, name: rewardName }, ...ownedDrops(type)]);
-  saveEconomy();
+  playCaseOpenSound();
+  pendingCaseDrop = { type, tier: rewardTier.id, name: rewardName };
 
   let fallbackTimer;
   let openingFinished = false;
@@ -604,8 +644,9 @@ function openCase() {
     caseReveal.dataset.tier = rewardTier.id;
     caseRarity.textContent = rewardTier.label;
     caseItemName.textContent = rewardName;
-    renderSkinInventory(type);
-    caseMessage.textContent = `${rewardTier.label} DROP ADDED TO YOUR COLLECTION`;
+    caseSellButton.textContent = `SELL FOR ${caseSellValue(pendingCaseDrop).toLocaleString()} COINS`;
+    caseRewardActions.hidden = false;
+    caseMessage.textContent = "CHOOSE TO SELL OR KEEP YOUR DROP";
     caseIsOpening = false;
     openCaseButton.disabled = false;
     caseTypeButtons.forEach(button => { button.disabled = false; });
@@ -616,14 +657,18 @@ function openCase() {
 
   caseReelTrack.addEventListener("transitionend", onReelStop);
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  fallbackTimer = window.setTimeout(finishOpening, reducedMotion ? 100 : 5600);
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    const markerCenter = caseReelViewport.clientWidth / 2;
-    const winningCardCenter = winningCard.offsetLeft + winningCard.offsetWidth / 2;
-    caseReelTrack.style.transition = "";
-    caseReelTrack.style.transform = `translateX(${markerCenter - winningCardCenter}px)`;
-  }));
+  const reelStartDelay = reducedMotion ? 0 : 1150;
+  fallbackTimer = window.setTimeout(finishOpening, reducedMotion ? 100 : 6800);
+  window.setTimeout(() => {
+    if (!caseIsOpening) return;
     startCaseRollSound();
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const markerCenter = caseReelViewport.clientWidth / 2;
+      const winningCardCenter = winningCard.offsetLeft + winningCard.offsetWidth / 2;
+      caseReelTrack.style.transition = "";
+      caseReelTrack.style.transform = `translateX(${markerCenter - winningCardCenter}px)`;
+    }));
+  }, reelStartDelay);
 }
 
 function showMenuPage(pageId) {
@@ -635,6 +680,7 @@ function showMenuPage(pageId) {
 document.getElementById("play-button").addEventListener("click", function () {
   resetGame();
   titleScreen.hidden = true;
+  gameMenuButton.hidden = false;
 });
 
 document.getElementById("achievements-button").addEventListener("click", function () {
@@ -645,6 +691,38 @@ document.getElementById("cases-button").addEventListener("click", function () {
   caseMessage.textContent = "Earn 5 coins for every brick you break.";
   showMenuPage("cases-page");
 });
+
+function resolveCaseReward(keepDrop) {
+  if (!pendingCaseDrop) return;
+  const drop = pendingCaseDrop;
+  pendingCaseDrop = null;
+  if (keepDrop) {
+    setOwnedDrops(drop.type, [{ tier: drop.tier, name: drop.name }, ...ownedDrops(drop.type)]);
+    saveEconomy();
+    renderSkinInventory(drop.type);
+    caseMessage.textContent = `${drop.name.toUpperCase()} ADDED TO YOUR COLLECTION`;
+  } else {
+    const sellValue = caseSellValue(drop);
+    addCoins(sellValue);
+    caseMessage.textContent = `${drop.name.toUpperCase()} SOLD FOR ${sellValue.toLocaleString()} COINS`;
+  }
+  caseRewardActions.hidden = true;
+  caseReveal.classList.remove("has-awarded", "is-spinning");
+}
+
+caseSellButton.addEventListener("click", () => resolveCaseReward(false));
+caseKeepButton.addEventListener("click", () => resolveCaseReward(true));
+
+function returnToMenu() {
+  gameState = "menu";
+  gameOverlay.hidden = true;
+  gameMenuButton.hidden = true;
+  titleScreen.hidden = false;
+  minecraftAudio.pause();
+  showMenuPage("home-page");
+}
+
+gameMenuButton.addEventListener("click", returnToMenu);
 
 caseTypeButtons.forEach(button => {
   button.addEventListener("click", function () {
@@ -688,11 +766,7 @@ caseSoundButton.addEventListener("click", function () {
 });
 
 document.getElementById("menu-button").addEventListener("click", function () {
-  gameState = "menu";
-  gameOverlay.hidden = true;
-  titleScreen.hidden = false;
-  minecraftAudio.pause();
-  showMenuPage("home-page");
+  returnToMenu();
 });
 
 function makeBall(x, y, vx, vy, isStarter = false) {
@@ -985,6 +1059,7 @@ function finishGame(message) {
     }
   }
   gameState = isWin ? "won" : "lost";
+  gameMenuButton.hidden = true;
   minecraftAudio.pause();
   gameMessage.textContent = message;
   winPortrait.hidden = !isWin || currentLevel !== 1;
@@ -1658,6 +1733,7 @@ function start() {
   resetGame();
   gameState = "menu";
   titleScreen.hidden = false;
+  gameMenuButton.hidden = true;
   showMenuPage("home-page");
   lastTime = performance.now();
   requestAnimationFrame(frame);
@@ -1666,10 +1742,12 @@ function start() {
 restartButton.addEventListener("click", function () {
   if (gameState === "won" && currentLevel < 3) {
     startNextLevel();
+    gameMenuButton.hidden = false;
     return;
   }
 
   resetGame();
+  gameMenuButton.hidden = false;
 });
 
 // Wait until all three script files have loaded, then start.
