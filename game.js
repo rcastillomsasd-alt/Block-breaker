@@ -87,7 +87,8 @@ let trailDrops = [];
 let caseIsOpening = false;
 let caseSoundEnabled = true;
 let caseAudioContext = null;
-let caseRollTimer = null;
+let caseRollFrame = null;
+let caseNoiseBuffer = null;
 let equippedPaddleSkin = null;
 let equippedBallSkin = null;
 let equippedTrail = null;
@@ -448,39 +449,94 @@ function playCaseTick(progress) {
   if (!audioContext) return;
 
   const startTime = audioContext.currentTime;
+  if (!caseNoiseBuffer) {
+    caseNoiseBuffer = audioContext.createBuffer(1, Math.ceil(audioContext.sampleRate * 0.04), audioContext.sampleRate);
+    const noiseData = caseNoiseBuffer.getChannelData(0);
+    for (let index = 0; index < noiseData.length; index++) {
+      noiseData[index] = Math.random() * 2 - 1;
+    }
+  }
+
+  const noise = audioContext.createBufferSource();
+  const filter = audioContext.createBiquadFilter();
+  const noiseGain = audioContext.createGain();
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  noise.buffer = caseNoiseBuffer;
+  filter.type = "bandpass";
+  filter.frequency.setValueAtTime(1900 - progress * 500, startTime);
+  filter.Q.setValueAtTime(0.8, startTime);
+  noiseGain.gain.setValueAtTime(0.0001, startTime);
+  noiseGain.gain.exponentialRampToValueAtTime(0.045, startTime + 0.002);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.032);
+  oscillator.type = "square";
+  oscillator.frequency.setValueAtTime(1120 - progress * 410, startTime);
+  oscillator.frequency.exponentialRampToValueAtTime(310 - progress * 90, startTime + 0.026);
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.025, startTime + 0.002);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.035);
+  noise.connect(filter);
+  filter.connect(noiseGain);
+  noiseGain.connect(audioContext.destination);
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+  noise.start(startTime);
+  noise.stop(startTime + 0.04);
+  oscillator.start(startTime);
+  oscillator.stop(startTime + 0.037);
+}
+
+function playCaseOpenSound() {
+  const audioContext = getCaseAudioContext();
+  if (!audioContext) return;
+
+  const startTime = audioContext.currentTime;
   const oscillator = audioContext.createOscillator();
   const gain = audioContext.createGain();
   oscillator.type = "triangle";
-  oscillator.frequency.setValueAtTime(1480 - progress * 570, startTime);
-  oscillator.frequency.exponentialRampToValueAtTime(490 - progress * 120, startTime + 0.025);
+  oscillator.frequency.setValueAtTime(132, startTime);
+  oscillator.frequency.exponentialRampToValueAtTime(48, startTime + 0.13);
   gain.gain.setValueAtTime(0.0001, startTime);
-  gain.gain.exponentialRampToValueAtTime(0.055, startTime + 0.002);
-  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.04);
+  gain.gain.exponentialRampToValueAtTime(0.11, startTime + 0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.17);
   oscillator.connect(gain);
   gain.connect(audioContext.destination);
   oscillator.start(startTime);
-  oscillator.stop(startTime + 0.042);
+  oscillator.stop(startTime + 0.18);
 }
 
 function startCaseRollSound() {
-  window.clearTimeout(caseRollTimer);
+  window.cancelAnimationFrame(caseRollFrame);
   if (!caseSoundEnabled || !getCaseAudioContext()) return;
-  const startedAt = performance.now();
-  const duration = 5200;
-  const playNextTick = () => {
+  playCaseOpenSound();
+  const markerCenter = caseReelViewport.clientWidth / 2;
+  const cards = [...caseReelTrack.children];
+  let lastCardIndex = cards.reduce((index, card, cardIndex) => (
+    card.offsetLeft + card.offsetWidth / 2 <= markerCenter ? cardIndex : index
+  ), -1);
+  const firstCardIndex = Math.max(lastCardIndex, 0);
+
+  const onReelFrame = () => {
     if (!caseIsOpening || !caseSoundEnabled) return;
-    const progress = Math.min((performance.now() - startedAt) / duration, 1);
-    playCaseTick(progress);
-    if (progress < 1) {
-      caseRollTimer = window.setTimeout(playNextTick, 35 + progress ** 2 * 520);
+    const transform = window.getComputedStyle(caseReelTrack).transform;
+    const offset = transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m41;
+    const markerPosition = markerCenter - offset;
+    while (lastCardIndex + 1 < cards.length) {
+      const nextCard = cards[lastCardIndex + 1];
+      if (nextCard.offsetLeft + nextCard.offsetWidth / 2 > markerPosition) break;
+      lastCardIndex++;
+      const progress = Math.min((lastCardIndex - firstCardIndex) / (CASE_REEL_STOP_INDEX - firstCardIndex), 1);
+      playCaseTick(progress);
     }
+    caseRollFrame = window.requestAnimationFrame(onReelFrame);
   };
-  playNextTick();
+
+  caseRollFrame = window.requestAnimationFrame(onReelFrame);
 }
 
 function stopCaseRollSound() {
-  window.clearTimeout(caseRollTimer);
-  caseRollTimer = null;
+  window.cancelAnimationFrame(caseRollFrame);
+  caseRollFrame = null;
 }
 
 function playCaseResultSound(tierId) {
