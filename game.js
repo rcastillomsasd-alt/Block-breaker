@@ -94,6 +94,7 @@ let caseSoundEnabled = true;
 let caseAudioContext = null;
 let caseRollFrame = null;
 let caseNoiseBuffer = null;
+let caseRollTickIndex = 0;
 let equippedPaddleSkin = null;
 let equippedBallSkin = null;
 let equippedTrail = null;
@@ -502,16 +503,17 @@ function playCaseTick(progress) {
   const noiseGain = audioContext.createGain();
   const oscillator = audioContext.createOscillator();
   const gain = audioContext.createGain();
+  const pitchVariation = (Math.random() - 0.5) * 150;
   noise.buffer = caseNoiseBuffer;
   filter.type = "bandpass";
-  filter.frequency.setValueAtTime(1900 - progress * 500, startTime);
-  filter.Q.setValueAtTime(0.8, startTime);
+  filter.frequency.setValueAtTime(2300 - progress * 720, startTime);
+  filter.Q.setValueAtTime(caseRollTickIndex % 2 === 0 ? 1.1 : 0.72, startTime);
   noiseGain.gain.setValueAtTime(0.0001, startTime);
   noiseGain.gain.exponentialRampToValueAtTime(0.045, startTime + 0.002);
   noiseGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.032);
-  oscillator.type = "square";
-  oscillator.frequency.setValueAtTime(1120 - progress * 410, startTime);
-  oscillator.frequency.exponentialRampToValueAtTime(310 - progress * 90, startTime + 0.026);
+  oscillator.type = caseRollTickIndex % 2 === 0 ? "triangle" : "sine";
+  oscillator.frequency.setValueAtTime(1540 - progress * 620 + pitchVariation, startTime);
+  oscillator.frequency.exponentialRampToValueAtTime(560 - progress * 140, startTime + 0.026);
   gain.gain.setValueAtTime(0.0001, startTime);
   gain.gain.exponentialRampToValueAtTime(0.025, startTime + 0.002);
   gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.035);
@@ -524,6 +526,7 @@ function playCaseTick(progress) {
   noise.stop(startTime + 0.04);
   oscillator.start(startTime);
   oscillator.stop(startTime + 0.037);
+  caseRollTickIndex++;
 }
 
 function playCaseOpenSound() {
@@ -548,7 +551,7 @@ function playCaseOpenSound() {
 function startCaseRollSound() {
   window.cancelAnimationFrame(caseRollFrame);
   if (!caseSoundEnabled || !getCaseAudioContext()) return;
-  playCaseOpenSound();
+  caseRollTickIndex = 0;
   const markerCenter = caseReelViewport.clientWidth / 2;
   const cards = [...caseReelTrack.children];
   let lastCardIndex = cards.reduce((index, card, cardIndex) => (
@@ -610,6 +613,7 @@ function openCase() {
   }
 
   const type = activeCaseType;
+  caseReveal.dataset.caseType = type;
   const tiers = caseTiers(type);
   const rewardTier = chooseCaseTier(tiers);
   const rewardName = rewardTier.items[Math.floor(Math.random() * rewardTier.items.length)];
@@ -657,8 +661,8 @@ function openCase() {
 
   caseReelTrack.addEventListener("transitionend", onReelStop);
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const reelStartDelay = reducedMotion ? 0 : 1150;
-  fallbackTimer = window.setTimeout(finishOpening, reducedMotion ? 100 : 6800);
+  const reelStartDelay = reducedMotion ? 0 : 1550;
+  fallbackTimer = window.setTimeout(finishOpening, reducedMotion ? 100 : 7400);
   window.setTimeout(() => {
     if (!caseIsOpening) return;
     startCaseRollSound();
@@ -730,6 +734,7 @@ caseTypeButtons.forEach(button => {
       return;
     }
     activeCaseType = button.dataset.caseType;
+    caseReveal.dataset.caseType = activeCaseType;
     caseTypeButtons.forEach(caseButton => {
       const isActive = caseButton === button;
       caseButton.classList.toggle("is-active", isActive);

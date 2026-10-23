@@ -511,6 +511,11 @@ canvas {
 
 .case-reveal {
   --reveal-accent: #c4ccd0;
+  --case-shell-light: #c4e8f4;
+  --case-shell-mid: #69a9c8;
+  --case-shell-dark: #315d7b;
+  --case-trim: #d4f4ff;
+  --case-glow: #8ee5ff;
   position: fixed;
   z-index: 100;
   inset: 0;
@@ -535,6 +540,20 @@ canvas {
 .case-reveal[data-tier="blue"] { --reveal-accent: #55a9ff; }
 .case-reveal[data-tier="purple"] { --reveal-accent: #bb8cff; }
 .case-reveal[data-tier="gold"] { --reveal-accent: #ffd166; }
+.case-reveal[data-case-type="ball"] {
+  --case-shell-light: #3a4148;
+  --case-shell-mid: #171c22;
+  --case-shell-dark: #080b10;
+  --case-trim: #8b969f;
+  --case-glow: #c4d4e0;
+}
+.case-reveal[data-case-type="trail"] {
+  --case-shell-light: #386b9a;
+  --case-shell-mid: #17385f;
+  --case-shell-dark: #091a34;
+  --case-trim: #81b9ee;
+  --case-glow: #478ee0;
+}
 
 .case-stage-heading {
   position: relative;
@@ -611,7 +630,8 @@ canvas {
 }
 
 .case-reveal.is-spinning .case-basement::after {
-  animation: case-unseal-flash 850ms 900ms ease-out both;
+  background: radial-gradient(ellipse at 50% 54%, color-mix(in srgb, var(--case-glow) 82%, white), transparent 60%);
+  animation: case-unseal-flash 1000ms 1.25s ease-out both;
 }
 
 .case-reveal.is-spinning .case-basement {
@@ -662,6 +682,7 @@ canvas {
   display: block;
   width: clamp(150px, 24vw, 280px);
   height: clamp(90px, 15vw, 170px);
+  perspective: 560px;
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 18px 15px rgb(0 0 0 / 65%));
 }
@@ -672,14 +693,15 @@ canvas {
   left: 0;
   display: block;
   width: 100%;
-  border: 2px solid #d0a86d;
-  background: linear-gradient(90deg, #514231, #796044 48%, #473b2c);
+  border: 3px solid var(--case-trim);
+  background: linear-gradient(180deg, var(--case-shell-light), var(--case-shell-mid) 35%, var(--case-shell-dark));
+  box-shadow: inset 0 2px 4px rgb(255 255 255 / 28%), inset 0 -8px 12px rgb(0 0 0 / 34%);
 }
 
 .case-prop-body {
   bottom: 0;
   height: 72%;
-  box-shadow: inset 0 0 0 3px rgb(10 14 13 / 36%);
+  box-shadow: inset 0 2px 4px rgb(255 255 255 / 28%), inset 0 -8px 12px rgb(0 0 0 / 34%), 0 12px 18px rgb(0 0 0 / 35%);
 }
 
 .case-prop-body::before,
@@ -687,20 +709,23 @@ canvas {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 4px;
-  background: #c4a16b;
+  width: 5%;
+  background: linear-gradient(90deg, var(--case-trim), color-mix(in srgb, var(--case-trim) 42%, var(--case-shell-dark)));
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 26%);
   content: "";
 }
 
-.case-prop-body::before { left: 10px; }
-.case-prop-body::after { right: 10px; }
+.case-prop-body::before { left: 9%; }
+.case-prop-body::after { right: 9%; }
 
 .case-prop-lid {
   top: 1%;
   z-index: 1;
   height: 28%;
   transform-origin: left bottom;
-  background: linear-gradient(90deg, #b48c55, #e0bd7b 48%, #997346);
+  transform-style: preserve-3d;
+  background: linear-gradient(180deg, var(--case-shell-light), var(--case-shell-mid) 45%, var(--case-shell-dark));
+  box-shadow: inset 0 2px 5px rgb(255 255 255 / 32%), 0 4px 4px rgb(0 0 0 / 34%);
 }
 
 .case-prop-lock {
@@ -710,21 +735,27 @@ canvas {
   left: 50%;
   width: 9%;
   height: 21%;
-  border: 1px solid #dfc58c;
-  background: #27302e;
+  border: 2px solid var(--case-trim);
+  background: linear-gradient(135deg, #f2fcff, #526575 48%, #17212c);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 48%), 0 0 9px color-mix(in srgb, var(--case-glow) 54%, transparent);
   transform: translateX(-50%);
 }
 
 .case-reveal.is-spinning .case-prop {
-  animation: case-prop-pop 760ms cubic-bezier(0.18, 0.8, 0.24, 1) both;
+  animation: case-prop-pop 760ms cubic-bezier(0.18, 0.8, 0.24, 1) both,
+    case-prop-rattle 620ms 760ms ease-in-out both;
 }
 
 .case-reveal.is-spinning .case-prop-lid {
-  animation: case-prop-open 600ms 1.05s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  animation: case-prop-open 760ms 1.18s cubic-bezier(0.24, 0.72, 0.2, 1) both;
+}
+
+.case-reveal.is-spinning .case-prop-lock {
+  animation: case-lock-release 300ms 1.14s ease-in both;
 }
 
 .case-reveal.has-awarded .case-prop-lid {
-  transform: rotateX(-68deg) translateY(-2px);
+  transform: rotateX(-105deg) translateY(-3px);
 }
 
 .case-reel-viewport {
@@ -1016,8 +1047,22 @@ canvas {
 }
 
 @keyframes case-prop-open {
-  0%, 25% { transform: rotateX(0); }
-  100% { transform: rotateX(-68deg) translateY(-2px); }
+  0%, 18% { transform: rotateX(0); }
+  60% { transform: rotateX(-112deg) translateY(-4px); }
+  78% { transform: rotateX(-99deg) translateY(-2px); }
+  100% { transform: rotateX(-105deg) translateY(-3px); }
+}
+
+@keyframes case-prop-rattle {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0); }
+  20% { transform: translate(calc(-50% - 4px), -50%) rotate(-1.2deg); }
+  42% { transform: translate(calc(-50% + 4px), -50%) rotate(1.2deg); }
+  64% { transform: translate(calc(-50% - 2px), -50%) rotate(-0.7deg); }
+  82% { transform: translate(calc(-50% + 1px), -50%) rotate(0.3deg); }
+}
+
+@keyframes case-lock-release {
+  to { opacity: 0; transform: translate(-50%, 8px) scale(0.7); }
 }
 
 @keyframes case-unseal-flash {
@@ -1053,7 +1098,7 @@ canvas {
   .case-reveal.is-spinning .case-reel-viewport,
   .case-reel-card-art[data-effect]::after { animation: none; }
   .case-reveal.is-spinning .case-prop-lid,
-  .case-reveal.has-awarded .case-prop-lid { transform: rotateX(-68deg) translateY(-2px); }
+  .case-reveal.has-awarded .case-prop-lid { transform: rotateX(-105deg) translateY(-3px); }
 }
 
 .case-odds {
