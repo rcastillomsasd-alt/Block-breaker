@@ -39,6 +39,8 @@ const caseItemName = document.getElementById("case-item-name");
 const caseRoundLabel = document.getElementById("case-round-label");
 const caseReelViewport = document.getElementById("case-reel-viewport");
 const caseReelTrack = document.getElementById("case-reel-track");
+const caseCollectionLineup = document.getElementById("case-collection-lineup");
+const caseCollectionCount = document.getElementById("case-collection-count");
 const caseSoundButton = document.getElementById("case-sound-button");
 const caseMessage = document.getElementById("case-message");
 const openCaseButton = document.getElementById("open-case-button");
@@ -459,6 +461,18 @@ function createCaseReelCard(type, name, tierId) {
   return card;
 }
 
+function renderCaseCollectionLineup(type) {
+  const tiers = caseTiers(type);
+  const cards = tiers.flatMap(tier => tier.items.map(name => {
+    const card = createCaseReelCard(type, name, tier.id);
+    card.classList.add("case-lineup-card");
+    card.setAttribute("role", "listitem");
+    return card;
+  }));
+  caseCollectionLineup.replaceChildren(...cards);
+  caseCollectionCount.textContent = `${cards.length} ITEMS`;
+}
+
 function fillCaseReel(type, tiers, rewardTier, rewardName) {
   const reelCards = [];
   for (let index = 0; index <= CASE_REEL_STOP_INDEX + 3; index++) {
@@ -736,6 +750,7 @@ caseTypeButtons.forEach(button => {
     }
     activeCaseType = button.dataset.caseType;
     caseReveal.dataset.caseType = activeCaseType;
+    renderCaseCollectionLineup(activeCaseType);
     caseTypeButtons.forEach(caseButton => {
       const isActive = caseButton === button;
       caseButton.classList.toggle("is-active", isActive);
@@ -752,6 +767,8 @@ caseTypeButtons.forEach(button => {
     caseMessage.textContent = "Earn 5 coins for every brick you break.";
   });
 });
+
+renderCaseCollectionLineup(activeCaseType);
 
 document.getElementById("inventory-button").addEventListener("click", function () {
   showMenuPage("inventory-page");
@@ -1159,7 +1176,7 @@ function moveBall(activeBall) {
       x: activeBall.x + activeBall.width / 2,
       y: activeBall.y + activeBall.height / 2
     });
-    activeBall.trail.length = Math.min(activeBall.trail.length, 18);
+    activeBall.trail.length = Math.min(activeBall.trail.length, 24);
   }
 }
 
@@ -1170,17 +1187,63 @@ function drawBallTrail(activeBall) {
   }
 
   const trailLength = activeBall.trail.length;
-  const animationStep = Math.floor(performance.now() / 90);
+  const animationTime = performance.now() / 1000;
+  const animationStep = Math.floor(animationTime * 12);
+  const oldestPoint = activeBall.trail[trailLength - 1];
+  const newestPoint = activeBall.trail[0];
+  const tailGradient = ctx.createLinearGradient(
+    newestPoint.x,
+    newestPoint.y,
+    oldestPoint.x,
+    oldestPoint.y
+  );
+  skin.colors.forEach((color, index) => {
+    tailGradient.addColorStop(index / Math.max(1, skin.colors.length - 1), color);
+  });
+
   ctx.save();
+  if (trailLength > 1) {
+    ctx.beginPath();
+    ctx.moveTo(newestPoint.x, newestPoint.y);
+    for (let index = 1; index < trailLength - 1; index++) {
+      const point = activeBall.trail[index];
+      const nextPoint = activeBall.trail[index + 1];
+      ctx.quadraticCurveTo(
+        point.x,
+        point.y,
+        (point.x + nextPoint.x) / 2,
+        (point.y + nextPoint.y) / 2
+      );
+    }
+    ctx.lineTo(oldestPoint.x, oldestPoint.y);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = tailGradient;
+    ctx.shadowColor = skin.glow;
+    ctx.shadowBlur = 15;
+    ctx.globalAlpha = 0.52;
+    ctx.lineWidth = activeBall.width * 1.15;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 0.84;
+    ctx.lineWidth = activeBall.width * 0.42;
+    ctx.stroke();
+    ctx.globalAlpha = 0.78;
+    ctx.strokeStyle = "rgba(255,255,255,0.82)";
+    ctx.lineWidth = Math.max(1, activeBall.width * 0.1);
+    ctx.stroke();
+  }
+
   activeBall.trail.forEach((point, index) => {
     const progress = index / Math.max(1, trailLength - 1);
-    const size = activeBall.width * (0.43 - progress * 0.27);
+    const size = activeBall.width * (0.48 - progress * 0.34);
     const color = skin.colors[(index + animationStep) % skin.colors.length];
-    ctx.globalAlpha = 0.72 * (1 - progress);
+    const flicker = 0.82 + Math.sin(animationTime * 16 + index * 1.7) * 0.18;
+    ctx.globalAlpha = 0.7 * (1 - progress) * flicker;
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
     ctx.shadowColor = skin.glow;
-    ctx.shadowBlur = 8 * (1 - progress);
+    ctx.shadowBlur = 7 * (1 - progress);
     ctx.save();
     ctx.translate(point.x, point.y);
 
@@ -1190,18 +1253,18 @@ function drawBallTrail(activeBall) {
       ctx.lineWidth = Math.max(1, size * 0.28);
       ctx.stroke();
     } else if (skin.shape === "square") {
-      ctx.rotate((animationStep + index) * 0.12);
+      ctx.rotate(animationTime * 2.4 + index * 0.12);
       ctx.fillRect(-size * 0.65, -size * 0.65, size * 1.3, size * 1.3);
     } else if (skin.shape === "galaxy") {
       ctx.beginPath();
       ctx.arc(0, 0, size * 0.72, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.ellipse(0, 0, size * 1.55, size * 0.48, animationStep * 0.04 + index * 0.2, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, size * 1.55, size * 0.48, animationTime * 0.8 + index * 0.2, 0, Math.PI * 2);
       ctx.lineWidth = Math.max(1, size * 0.18);
       ctx.stroke();
     } else if (skin.shape === "star" || skin.shape === "spark") {
-      ctx.rotate((animationStep + index) * 0.08);
+      ctx.rotate(animationTime * 1.8 + index * 0.08);
       ctx.beginPath();
       ctx.moveTo(0, -size * 1.5);
       ctx.lineTo(size * 0.28, -size * 0.28);
