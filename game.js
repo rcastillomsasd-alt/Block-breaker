@@ -68,6 +68,7 @@ ctx.scale(PIXEL_RATIO, PIXEL_RATIO);
 // A positive vy means the ball is moving DOWN the screen.
 // ------------------------------------------------------------
 const BALL_SPEED = 4;
+const STARTER_BALL_SPEED = 6;
 const BALL_SIZE = 12;
 const STARTING_RESERVES = 4;
 
@@ -864,11 +865,11 @@ document.addEventListener("keydown", function (event) {
         }
         const launchDirection = Math.sign(paddle.movement) || (Math.random() < 0.5 ? -1 : 1);
         if (paddle.movement === 0) {
-          starterBall.vx = launchDirection * BALL_SPEED * 0.5;
-          starterBall.vy = -Math.sqrt(BALL_SPEED ** 2 - starterBall.vx ** 2);
+          starterBall.vx = launchDirection * STARTER_BALL_SPEED * 0.5;
+          starterBall.vy = -Math.sqrt(STARTER_BALL_SPEED ** 2 - starterBall.vx ** 2);
         } else {
-          starterBall.vx = launchDirection * BALL_SPEED;
-          starterBall.vy = -BALL_SPEED;
+          starterBall.vx = launchDirection * STARTER_BALL_SPEED * Math.SQRT1_2;
+          starterBall.vy = -STARTER_BALL_SPEED * Math.SQRT1_2;
         }
       }
     }

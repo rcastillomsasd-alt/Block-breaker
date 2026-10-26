@@ -722,10 +722,6 @@ canvas {
   animation: case-unseal-flash 1000ms 1.25s ease-out both;
 }
 
-.case-reveal.is-spinning .case-basement {
-  animation: case-basement-shake 850ms 300ms ease-in-out both;
-}
-
 .basement-pipe,
 .basement-upright {
   position: absolute;
@@ -795,7 +791,7 @@ canvas {
   display: block;
   width: clamp(150px, 24vw, 280px);
   height: clamp(90px, 15vw, 170px);
-  perspective: 560px;
+  perspective: 700px;
   transform: translate(-50%, -50%) rotateY(-8deg) rotateX(2deg);
   transform-style: preserve-3d;
   filter: drop-shadow(16px 25px 14px rgb(0 0 0 / 72%));
@@ -857,6 +853,7 @@ canvas {
     inset 0 -8px 12px rgb(0 0 0 / 34%),
     inset 7px 0 12px rgb(0 0 0 / 20%),
     0 12px 18px rgb(0 0 0 / 35%);
+  transform: translateZ(2px);
 }
 
 .case-prop-body::before,
@@ -865,8 +862,11 @@ canvas {
   top: 0;
   bottom: 0;
   width: 5%;
-  background: linear-gradient(90deg, var(--case-trim), color-mix(in srgb, var(--case-trim) 42%, var(--case-shell-dark)));
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 26%);
+  background:
+    radial-gradient(circle at 50% 10%, #f5e4b9 0 1px, #5b5547 2px, transparent 3px),
+    radial-gradient(circle at 50% 90%, #f5e4b9 0 1px, #5b5547 2px, transparent 3px),
+    linear-gradient(90deg, color-mix(in srgb, var(--case-trim) 82%, white), var(--case-trim) 46%, color-mix(in srgb, var(--case-trim) 42%, var(--case-shell-dark)));
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 26%), inset 1px 0 2px rgb(255 255 255 / 38%);
   content: "";
 }
 
@@ -883,7 +883,22 @@ canvas {
     repeating-linear-gradient(90deg, transparent 0 27px, rgb(0 0 0 / 9%) 28px, transparent 29px 42px),
     linear-gradient(180deg, var(--case-shell-light), var(--case-shell-mid) 45%, var(--case-shell-dark));
   box-shadow: inset 0 2px 5px rgb(255 255 255 / 32%), inset 0 -4px 8px rgb(0 0 0 / 25%), 0 4px 4px rgb(0 0 0 / 34%);
+  transform: translateZ(5px);
 }
+
+.case-prop-lid::before,
+.case-prop-lid::after {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  border: 1px solid color-mix(in srgb, var(--case-trim) 65%, #303638);
+  background: linear-gradient(90deg, #303638, var(--case-trim), #5b5140);
+  content: "";
+}
+
+.case-prop-lid::before { left: 8%; }
+.case-prop-lid::after { right: 8%; }
 
 .case-prop-lock {
   position: absolute;
@@ -912,7 +927,7 @@ canvas {
 }
 
 .case-reveal.has-awarded .case-prop-lid {
-  transform: rotateX(-105deg) translateY(-3px);
+  transform: translateZ(5px) rotateX(-105deg) translateY(-3px);
 }
 
 .case-reel-viewport {
@@ -1204,18 +1219,18 @@ canvas {
 }
 
 @keyframes case-prop-open {
-  0%, 18% { transform: rotateX(0); }
-  60% { transform: rotateX(-112deg) translateY(-4px); }
-  78% { transform: rotateX(-99deg) translateY(-2px); }
-  100% { transform: rotateX(-105deg) translateY(-3px); }
+  0%, 18% { transform: translateZ(5px) rotateX(0); }
+  60% { transform: translateZ(5px) rotateX(-112deg) translateY(-4px); }
+  78% { transform: translateZ(5px) rotateX(-99deg) translateY(-2px); }
+  100% { transform: translateZ(5px) rotateX(-105deg) translateY(-3px); }
 }
 
 @keyframes case-prop-rattle {
-  0%, 100% { transform: translate(-50%, -50%) rotateY(-8deg) rotateX(2deg) rotate(0); }
-  20% { transform: translate(calc(-50% - 4px), -50%) rotateY(-8deg) rotateX(2deg) rotate(-1.2deg); }
-  42% { transform: translate(calc(-50% + 4px), -50%) rotateY(-8deg) rotateX(2deg) rotate(1.2deg); }
-  64% { transform: translate(calc(-50% - 2px), -50%) rotateY(-8deg) rotateX(2deg) rotate(-0.7deg); }
-  82% { transform: translate(calc(-50% + 1px), -50%) rotateY(-8deg) rotateX(2deg) rotate(0.3deg); }
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  20% { translate: -4px 0; rotate: -1.2deg; }
+  42% { translate: 4px 0; rotate: 1.2deg; }
+  64% { translate: -2px 0; rotate: -0.7deg; }
+  82% { translate: 1px 0; rotate: 0.3deg; }
 }
 
 @keyframes case-lock-release {
@@ -1226,14 +1241,6 @@ canvas {
   0% { opacity: 0; transform: scale(0.72); }
   28% { opacity: 1; }
   100% { opacity: 0; transform: scale(1.35); }
-}
-
-@keyframes case-basement-shake {
-  0%, 100% { transform: translate(0); }
-  18% { transform: translate(-8px, 3px); }
-  36% { transform: translate(7px, -3px); }
-  54% { transform: translate(-5px, 2px); }
-  72% { transform: translate(3px, -1px); }
 }
 
 @keyframes case-reel-arrive {
@@ -1251,11 +1258,10 @@ canvas {
   .case-reveal.has-awarded .case-reel-card.is-winner,
   .case-reveal.is-spinning .case-stage-lamp,
   .case-reveal.is-spinning .case-prop,
-  .case-reveal.is-spinning .case-basement,
   .case-reveal.is-spinning .case-reel-viewport,
   .case-reel-card-art[data-effect]::after { animation: none; }
   .case-reveal.is-spinning .case-prop-lid,
-  .case-reveal.has-awarded .case-prop-lid { transform: rotateX(-105deg) translateY(-3px); }
+  .case-reveal.has-awarded .case-prop-lid { transform: translateZ(5px) rotateX(-105deg) translateY(-3px); }
 }
 
 .case-odds {
