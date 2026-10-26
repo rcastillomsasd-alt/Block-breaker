@@ -694,6 +694,9 @@ function showMenuPage(pageId) {
   menuPages.forEach(page => {
     page.hidden = page.id !== pageId;
   });
+  if (pageId !== "cases-page") {
+    caseCollectionLineup.scrollLeft = 0;
+  }
 }
 
 document.getElementById("play-button").addEventListener("click", function () {
@@ -707,6 +710,7 @@ document.getElementById("achievements-button").addEventListener("click", functio
 });
 
 document.getElementById("cases-button").addEventListener("click", function () {
+  caseCollectionLineup.scrollLeft = 0;
   caseMessage.textContent = "Earn 5 coins for every brick you break.";
   showMenuPage("cases-page");
 });
