@@ -511,11 +511,11 @@ canvas {
 
 .case-reveal {
   --reveal-accent: #c4ccd0;
-  --case-shell-light: #c4e8f4;
-  --case-shell-mid: #69a9c8;
-  --case-shell-dark: #315d7b;
-  --case-trim: #d4f4ff;
-  --case-glow: #8ee5ff;
+  --case-shell-light: #9aa5a8;
+  --case-shell-mid: #596468;
+  --case-shell-dark: #252d30;
+  --case-trim: #d2b477;
+  --case-glow: #f1cc78;
   position: fixed;
   z-index: 100;
   inset: 0;
@@ -525,10 +525,8 @@ canvas {
   overflow: hidden;
   padding: clamp(16px, 4vw, 48px);
   background:
-    radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--reveal-accent) 17%, transparent), transparent 58%),
-    repeating-linear-gradient(0deg, transparent 0 42px, rgb(255 255 255 / 2%) 43px 44px),
-    repeating-linear-gradient(90deg, transparent 0 42px, rgb(255 255 255 / 2%) 43px 44px),
-    #090d0e;
+    radial-gradient(ellipse at 50% 63%, color-mix(in srgb, var(--reveal-accent) 15%, transparent), transparent 42%),
+    linear-gradient(180deg, #121718 0%, #202725 58%, #111716 100%);
   isolation: isolate;
 }
 
@@ -541,18 +539,18 @@ canvas {
 .case-reveal[data-tier="purple"] { --reveal-accent: #bb8cff; }
 .case-reveal[data-tier="gold"] { --reveal-accent: #ffd166; }
 .case-reveal[data-case-type="ball"] {
-  --case-shell-light: #3a4148;
-  --case-shell-mid: #171c22;
-  --case-shell-dark: #080b10;
-  --case-trim: #8b969f;
-  --case-glow: #c4d4e0;
+  --case-shell-light: #858b8d;
+  --case-shell-mid: #42494b;
+  --case-shell-dark: #1b2022;
+  --case-trim: #aeb9bb;
+  --case-glow: #d4e0df;
 }
 .case-reveal[data-case-type="trail"] {
-  --case-shell-light: #386b9a;
-  --case-shell-mid: #17385f;
-  --case-shell-dark: #091a34;
-  --case-trim: #81b9ee;
-  --case-glow: #478ee0;
+  --case-shell-light: #778b97;
+  --case-shell-mid: #3d5665;
+  --case-shell-dark: #1c2b35;
+  --case-trim: #87b5c3;
+  --case-glow: #68c5d4;
 }
 
 .case-stage-heading {
@@ -605,18 +603,22 @@ canvas {
   inset: 0;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 50% 48%, rgb(218 179 117 / 13%), transparent 35%),
-    repeating-linear-gradient(0deg, transparent 0 54px, rgb(0 0 0 / 32%) 55px 59px),
-    repeating-linear-gradient(90deg, transparent 0 76px, rgb(0 0 0 / 25%) 77px 82px),
-    linear-gradient(180deg, #303532 0%, #242b29 72%, #171d1c 73%);
+    radial-gradient(ellipse at 50% 14%, rgb(255 224 165 / 23%), transparent 27%),
+    radial-gradient(ellipse at 50% 64%, rgb(207 163 104 / 15%), transparent 40%),
+    linear-gradient(180deg, #353a37 0%, #2a302d 56%, #1b211f 70%, #111615 71%);
   perspective: 800px;
 }
 
 .case-basement::before {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 62%, transparent 0 12%, rgb(5 8 8 / 44%) 82%);
+  z-index: 2;
+  background:
+    linear-gradient(180deg, rgb(0 0 0 / 8%), transparent 26% 68%, rgb(0 0 0 / 36%)),
+    radial-gradient(ellipse at 50% 50%, transparent 0 27%, rgb(4 7 7 / 52%) 100%),
+    repeating-linear-gradient(103deg, transparent 0 119px, rgb(255 255 255 / 1.5%) 120px, transparent 122px 203px);
   content: "";
+  pointer-events: none;
 }
 
 .case-basement::after {
@@ -628,6 +630,92 @@ canvas {
   opacity: 0;
   pointer-events: none;
 }
+
+.garage-door {
+  position: absolute;
+  top: 21%;
+  left: 50%;
+  width: min(58vw, 820px);
+  height: 43%;
+  border: 7px solid #454b47;
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 35%), transparent 8% 92%, rgb(0 0 0 / 35%)),
+    repeating-linear-gradient(180deg, #505752 0 2px, #353c38 3px 18px, #646a63 19px 20px, #343b37 21px 38px);
+  box-shadow:
+    inset 0 0 0 2px rgb(0 0 0 / 45%),
+    inset 0 12px 20px rgb(0 0 0 / 20%),
+    0 12px 25px rgb(0 0 0 / 34%);
+  transform: translateX(-50%) perspective(700px) rotateX(-2deg);
+}
+
+.garage-door::before,
+.garage-door::after {
+  position: absolute;
+  top: -13px;
+  bottom: -12px;
+  width: 10px;
+  border: 1px solid #787c72;
+  background: linear-gradient(90deg, #777b70, #373e39 60%, #202623);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 55%);
+  content: "";
+}
+
+.garage-door::before { left: -13px; }
+.garage-door::after { right: -13px; }
+
+.garage-cabinet {
+  position: absolute;
+  z-index: 1;
+  top: 33%;
+  right: 7%;
+  width: clamp(44px, 8vw, 100px);
+  height: 35%;
+  border: 2px solid #565f59;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 8%), transparent 15% 86%, rgb(0 0 0 / 30%)),
+    repeating-linear-gradient(180deg, transparent 0 31%, rgb(0 0 0 / 45%) 32% 34%, transparent 35% 66%, rgb(0 0 0 / 45%) 67% 69%, transparent 70%),
+    linear-gradient(90deg, #343c37, #59615a 45%, #252c28);
+  box-shadow: 12px 10px 25px rgb(0 0 0 / 45%), inset 0 0 12px rgb(0 0 0 / 34%);
+}
+
+.garage-cabinet::before,
+.garage-cabinet::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #85877a;
+  box-shadow: 0 0 4px rgb(255 218 155 / 24%);
+  content: "";
+}
+
+.garage-cabinet::before { left: 12%; }
+.garage-cabinet::after { right: 12%; }
+
+.garage-workbench {
+  position: absolute;
+  z-index: 1;
+  top: 61%;
+  left: 8%;
+  width: clamp(94px, 17vw, 210px);
+  height: 9px;
+  border: 1px solid #77756a;
+  background: linear-gradient(180deg, #93866b, #4b4b42 55%, #252b27);
+  box-shadow: 0 8px 11px rgb(0 0 0 / 40%);
+}
+
+.garage-workbench::before,
+.garage-workbench::after {
+  position: absolute;
+  top: 7px;
+  width: 6px;
+  height: clamp(30px, 7vh, 62px);
+  background: linear-gradient(90deg, #565b53, #252c28);
+  content: "";
+}
+
+.garage-workbench::before { left: 8%; }
+.garage-workbench::after { right: 8%; }
 
 .case-reveal.is-spinning .case-basement::after {
   background: radial-gradient(ellipse at 50% 54%, color-mix(in srgb, var(--case-glow) 82%, white), transparent 60%);
@@ -649,17 +737,26 @@ canvas {
 }
 
 .basement-pipe {
-  top: 14%;
+  top: 15%;
   right: -8px;
   left: -8px;
-  height: 14px;
+  height: 12px;
+  border-right: 0;
+  border-left: 0;
+  background:
+    linear-gradient(180deg, #a5a69a 0 12%, #62685f 28% 64%, #353c37 82%),
+    #454b45;
+  box-shadow: 0 3px 8px rgb(0 0 0 / 65%), 0 0 18px rgb(255 219 156 / 12%);
 }
 
 .basement-upright {
-  top: 15%;
-  left: 18%;
-  width: 12px;
-  height: 68%;
+  top: 16%;
+  left: 5%;
+  width: 9px;
+  height: 57%;
+  border-color: #555f58;
+  background: linear-gradient(90deg, #81877a, #454d46 38%, #242a26);
+  box-shadow: 3px 0 10px rgb(0 0 0 / 50%);
 }
 
 .basement-floor {
@@ -668,9 +765,25 @@ canvas {
   right: 0;
   bottom: 0;
   left: 0;
-  height: 9%;
-  border-top: 1px solid #69716a;
-  background: linear-gradient(180deg, #3b423d, #171c1b);
+  height: 31%;
+  overflow: hidden;
+  border-top: 2px solid #6c7065;
+  background:
+    linear-gradient(180deg, rgb(225 197 149 / 9%), transparent 19%),
+    repeating-linear-gradient(90deg, transparent 0 19%, rgb(0 0 0 / 23%) 19.2% 19.5%, transparent 19.7% 39%),
+    repeating-linear-gradient(180deg, transparent 0 31%, rgb(0 0 0 / 28%) 31.5% 32%, transparent 32.5% 63%),
+    linear-gradient(180deg, #424740, #252c29 62%, #151a18);
+  clip-path: polygon(9% 0, 91% 0, 100% 100%, 0 100%);
+  box-shadow: inset 0 16px 22px rgb(0 0 0 / 38%);
+}
+
+.basement-floor::before {
+  position: absolute;
+  inset: -30% 18% 52%;
+  border-radius: 50%;
+  background: rgb(255 218 154 / 13%);
+  content: "";
+  filter: blur(24px);
 }
 
 .case-prop {
@@ -683,8 +796,43 @@ canvas {
   width: clamp(150px, 24vw, 280px);
   height: clamp(90px, 15vw, 170px);
   perspective: 560px;
-  transform: translate(-50%, -50%);
-  filter: drop-shadow(0 18px 15px rgb(0 0 0 / 65%));
+  transform: translate(-50%, -50%) rotateY(-8deg) rotateX(2deg);
+  transform-style: preserve-3d;
+  filter: drop-shadow(16px 25px 14px rgb(0 0 0 / 72%));
+}
+
+.case-prop::before,
+.case-prop::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.case-prop::before {
+  z-index: 0;
+  top: 21%;
+  right: -8%;
+  bottom: 6%;
+  width: 18%;
+  border: 2px solid color-mix(in srgb, var(--case-trim) 70%, #232a2b);
+  background:
+    repeating-linear-gradient(180deg, transparent 0 19%, rgb(0 0 0 / 20%) 20% 21%),
+    linear-gradient(90deg, var(--case-shell-mid), var(--case-shell-dark));
+  clip-path: polygon(0 0, 100% 13%, 100% 87%, 0 100%);
+}
+
+.case-prop::after {
+  z-index: 0;
+  top: 7%;
+  left: 7%;
+  width: 88%;
+  height: 22%;
+  border: 2px solid color-mix(in srgb, var(--case-trim) 78%, white);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 32%), transparent 45%),
+    linear-gradient(110deg, var(--case-shell-light), var(--case-shell-mid) 58%, var(--case-shell-dark));
+  clip-path: polygon(8% 0, 100% 0, 91% 100%, 0 100%);
+  filter: drop-shadow(0 4px 3px rgb(0 0 0 / 50%));
 }
 
 .case-prop-body,
@@ -694,14 +842,21 @@ canvas {
   display: block;
   width: 100%;
   border: 3px solid var(--case-trim);
-  background: linear-gradient(180deg, var(--case-shell-light), var(--case-shell-mid) 35%, var(--case-shell-dark));
+  background:
+    repeating-linear-gradient(90deg, transparent 0 31px, rgb(0 0 0 / 8%) 32px, transparent 33px 48px),
+    linear-gradient(180deg, var(--case-shell-light), var(--case-shell-mid) 35%, var(--case-shell-dark));
   box-shadow: inset 0 2px 4px rgb(255 255 255 / 28%), inset 0 -8px 12px rgb(0 0 0 / 34%);
 }
 
 .case-prop-body {
+  z-index: 1;
   bottom: 0;
   height: 72%;
-  box-shadow: inset 0 2px 4px rgb(255 255 255 / 28%), inset 0 -8px 12px rgb(0 0 0 / 34%), 0 12px 18px rgb(0 0 0 / 35%);
+  box-shadow:
+    inset 0 2px 4px rgb(255 255 255 / 28%),
+    inset 0 -8px 12px rgb(0 0 0 / 34%),
+    inset 7px 0 12px rgb(0 0 0 / 20%),
+    0 12px 18px rgb(0 0 0 / 35%);
 }
 
 .case-prop-body::before,
@@ -724,8 +879,10 @@ canvas {
   height: 28%;
   transform-origin: left bottom;
   transform-style: preserve-3d;
-  background: linear-gradient(180deg, var(--case-shell-light), var(--case-shell-mid) 45%, var(--case-shell-dark));
-  box-shadow: inset 0 2px 5px rgb(255 255 255 / 32%), 0 4px 4px rgb(0 0 0 / 34%);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 27px, rgb(0 0 0 / 9%) 28px, transparent 29px 42px),
+    linear-gradient(180deg, var(--case-shell-light), var(--case-shell-mid) 45%, var(--case-shell-dark));
+  box-shadow: inset 0 2px 5px rgb(255 255 255 / 32%), inset 0 -4px 8px rgb(0 0 0 / 25%), 0 4px 4px rgb(0 0 0 / 34%);
 }
 
 .case-prop-lock {
@@ -1041,9 +1198,9 @@ canvas {
 }
 
 @keyframes case-prop-pop {
-  0% { opacity: 0; transform: translate(-50%, calc(-50% + 35px)) scale(0.72); }
-  65% { opacity: 1; transform: translate(-50%, calc(-50% - 5px)) scale(1.05); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  0% { opacity: 0; transform: translate(-50%, calc(-50% + 35px)) rotateY(-8deg) rotateX(2deg) scale(0.72); }
+  65% { opacity: 1; transform: translate(-50%, calc(-50% - 5px)) rotateY(-8deg) rotateX(2deg) scale(1.05); }
+  100% { opacity: 1; transform: translate(-50%, -50%) rotateY(-8deg) rotateX(2deg) scale(1); }
 }
 
 @keyframes case-prop-open {
@@ -1054,11 +1211,11 @@ canvas {
 }
 
 @keyframes case-prop-rattle {
-  0%, 100% { transform: translate(-50%, -50%) rotate(0); }
-  20% { transform: translate(calc(-50% - 4px), -50%) rotate(-1.2deg); }
-  42% { transform: translate(calc(-50% + 4px), -50%) rotate(1.2deg); }
-  64% { transform: translate(calc(-50% - 2px), -50%) rotate(-0.7deg); }
-  82% { transform: translate(calc(-50% + 1px), -50%) rotate(0.3deg); }
+  0%, 100% { transform: translate(-50%, -50%) rotateY(-8deg) rotateX(2deg) rotate(0); }
+  20% { transform: translate(calc(-50% - 4px), -50%) rotateY(-8deg) rotateX(2deg) rotate(-1.2deg); }
+  42% { transform: translate(calc(-50% + 4px), -50%) rotateY(-8deg) rotateX(2deg) rotate(1.2deg); }
+  64% { transform: translate(calc(-50% - 2px), -50%) rotateY(-8deg) rotateX(2deg) rotate(-0.7deg); }
+  82% { transform: translate(calc(-50% + 1px), -50%) rotateY(-8deg) rotateX(2deg) rotate(0.3deg); }
 }
 
 @keyframes case-lock-release {
