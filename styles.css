@@ -428,7 +428,7 @@ canvas {
 
 .menu-navigation {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin-top: 10px;
 }
@@ -439,6 +439,91 @@ canvas {
 .menu-back-button:focus-visible {
   border-color: #58d4c5;
   color: #58d4c5;
+}
+
+.shop-list {
+  display: grid;
+  gap: 12px;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  background: linear-gradient(180deg, rgb(255 255 255 / 4%), rgb(255 255 255 / 1%));
+}
+
+.shop-item-copy {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.shop-badge {
+  color: #ffda77;
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.shop-item-copy h3 {
+  margin: 0;
+  color: #f6f1ed;
+  font-size: 22px;
+}
+
+.shop-item-copy p {
+  margin: 0;
+  color: #9ca8ad;
+  font-size: 12px;
+}
+
+.shop-item-action {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  color: #ffe1a0;
+}
+
+.shop-buy-button {
+  min-width: 96px;
+  min-height: 38px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  background: #1a2327;
+  color: #f6f1ed;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.shop-buy-button:hover,
+.shop-buy-button:focus-visible {
+  border-color: #ffda77;
+  color: #ffda77;
+}
+
+.shop-buy-button.is-owned {
+  border-color: #58d4c5;
+  background: rgb(88 212 197 / 12%);
+  color: #58d4c5;
+}
+
+.shop-buy-button:disabled {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.shop-status {
+  margin: 18px 0 0;
+  color: #d8e2da;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .menu-page-heading {
@@ -1024,7 +1109,24 @@ canvas {
 
 .case-reel-card.rarity-blue { border-top-color: #55a9ff; }
 .case-reel-card.rarity-purple { border-top-color: #bb8cff; }
-.case-reel-card.rarity-gold { border-top-color: #ffd166; }
+.case-reel-card.rarity-gold {
+  border-top-color: #ffd166;
+  background: linear-gradient(145deg, rgba(255, 209, 102, 0.2), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 10px 25px rgba(255, 196, 60, 0.18), 0 0 18px rgba(255, 191, 86, 0.18);
+  transform: perspective(900px) rotateX(6deg);
+}
+
+.case-reel-card.rarity-gold .case-reel-card-art {
+  background:
+    linear-gradient(135deg, rgba(255, 237, 170, 0.9), rgba(255, 179, 58, 0.95) 30%, rgba(108, 68, 19, 0.85) 80%),
+    linear-gradient(120deg, #fdf1bd, #d28a1f 36%, #8a4915 100%);
+  box-shadow: inset 0 0 12px rgba(255, 244, 196, 0.35), inset 0 -10px 16px rgba(81, 42, 8, 0.22);
+}
+
+.case-reel-card.rarity-gold .case-reel-card-art::before {
+  border-color: rgba(255, 245, 197, 0.9);
+  box-shadow: 0 0 15px rgba(255, 210, 87, 0.7), 0 0 20px rgba(255, 184, 72, 0.5);
+}
 
 .case-reel-card-art {
   position: relative;

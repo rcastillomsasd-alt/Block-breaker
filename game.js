@@ -47,6 +47,10 @@ const openCaseButton = document.getElementById("open-case-button");
 const caseRewardActions = document.getElementById("case-reward-actions");
 const caseSellButton = document.getElementById("case-sell-button");
 const caseKeepButton = document.getElementById("case-keep-button");
+const shopButton = document.getElementById("shop-button");
+const buyQuickSpinButton = document.getElementById("buy-quick-spin");
+const buyMultiOpenButton = document.getElementById("buy-multi-open");
+const shopStatus = document.getElementById("shop-status");
 const paddleInventory = document.getElementById("paddle-inventory");
 const ballInventory = document.getElementById("ball-inventory");
 const trailInventory = document.getElementById("trail-inventory");
@@ -93,6 +97,7 @@ let ballDrops = [];
 let trailDrops = [];
 let caseIsOpening = false;
 let pendingCaseDrop = null;
+let queuedCaseOpens = 0;
 let caseSoundEnabled = true;
 let caseAudioContext = null;
 let caseRollFrame = null;
@@ -102,6 +107,8 @@ let equippedPaddleSkin = null;
 let equippedBallSkin = null;
 let equippedTrail = null;
 let activeCaseType = "paddle";
+let ownedQuickSpin = false;
+let ownedMultiOpen = false;
 
 const ACHIEVEMENTS = [
   { id: "speed-run", title: "Quick Finish" },
@@ -112,6 +119,8 @@ const ACHIEVEMENT_STORAGE_KEY = "block-breaker-achievements";
 const ECONOMY_STORAGE_KEY = "block-breaker-economy";
 const CASE_COST = 100;
 const CASE_REEL_STOP_INDEX = 24;
+const QUICK_SPIN_COST = 2499;
+const MULTI_OPEN_COST = 5499;
 let unlockedAchievements = new Set();
 const PADDLE_CASE_TIERS = [
   { id: "grey", label: "GREY", weight: 60, items: ["Court Classic", "Rookie Stripe", "Concrete Fade", "Baseline", "Marble Court"] },
@@ -299,6 +308,55 @@ function updateCoinDisplay() {
   coinCount.textContent = coins.toLocaleString();
 }
 
+function updateShopButtons() {
+  const quickSpinOwned = ownedQuickSpin;
+  const multiOpenOwned = ownedMultiOpen;
+  buyQuickSpinButton.textContent = quickSpinOwned ? "OWNED" : "BUY";
+  buyQuickSpinButton.disabled = quickSpinOwned;
+  buyQuickSpinButton.classList.toggle("is-owned", quickSpinOwned);
+  buyMultiOpenButton.textContent = multiOpenOwned ? "OWNED" : "BUY";
+  buyMultiOpenButton.disabled = multiOpenOwned;
+  buyMultiOpenButton.classList.toggle("is-owned", multiOpenOwned);
+
+  if (quickSpinOwned && multiOpenOwned) {
+    shopStatus.textContent = "Both boosts are active. Your case rolls are blazing fast and multi-open is ready.";
+  } else if (quickSpinOwned) {
+    shopStatus.textContent = "Quick Spin is active. Your reels move at turbo speed.";
+  } else if (multiOpenOwned) {
+    shopStatus.textContent = "Multi Open is active. One click opens two cases.";
+  } else {
+    shopStatus.textContent = "Buy a boost to speed up your rolls or open more cases at once.";
+  }
+}
+
+function buyGamePass(passType) {
+  const cost = passType === "quick-spin" ? QUICK_SPIN_COST : MULTI_OPEN_COST;
+
+  if (coins < cost) {
+    shopStatus.textContent = `You need ${cost - coins} more coins for this game pass.`;
+    return;
+  }
+
+  if (passType === "quick-spin") {
+    if (ownedQuickSpin) {
+      shopStatus.textContent = "Quick Spin is already active.";
+      return;
+    }
+    ownedQuickSpin = true;
+  } else {
+    if (ownedMultiOpen) {
+      shopStatus.textContent = "Multi Open is already active.";
+      return;
+    }
+    ownedMultiOpen = true;
+  }
+
+  coins -= cost;
+  updateCoinDisplay();
+  saveEconomy();
+  updateShopButtons();
+}
+
 function addCoins(amount) {
   coins += amount;
   updateCoinDisplay();
@@ -314,7 +372,9 @@ function saveEconomy() {
       trailDrops,
       equippedPaddleSkin,
       equippedBallSkin,
-      equippedTrail
+      equippedTrail,
+      ownedQuickSpin,
+      ownedMultiOpen
     }));
   } catch {
     caseMessage.textContent = "Save unavailable in this browser session.";
@@ -331,6 +391,8 @@ function loadEconomy() {
     paddleDrops = validDrops(saved.paddleDrops || saved.caseDrops, PADDLE_CASE_TIERS);
     ballDrops = validDrops(saved.ballDrops, BALL_CASE_TIERS);
     trailDrops = validDrops(saved.trailDrops, TRAIL_CASE_TIERS);
+    ownedQuickSpin = Boolean(saved.ownedQuickSpin);
+    ownedMultiOpen = Boolean(saved.ownedMultiOpen);
     const oldEquippedSkin = saved.equippedPaddleSkin || saved.equippedSkin;
     equippedPaddleSkin = typeof oldEquippedSkin === "string" && paddleDrops.some(drop => drop.name === oldEquippedSkin)
       ? oldEquippedSkin
@@ -349,8 +411,11 @@ function loadEconomy() {
     equippedPaddleSkin = null;
     equippedBallSkin = null;
     equippedTrail = null;
+    ownedQuickSpin = false;
+    ownedMultiOpen = false;
   }
   updateCoinDisplay();
+  updateShopButtons();
   renderSkinInventory("paddle");
   renderSkinInventory("ball");
   renderSkinInventory("trail");
@@ -475,7 +540,8 @@ function renderCaseCollectionLineup(type) {
 
 function fillCaseReel(type, tiers, rewardTier, rewardName) {
   const reelCards = [];
-  for (let index = 0; index <= CASE_REEL_STOP_INDEX + 3; index++) {
+  const extraTail = ownedQuickSpin ? 10 : 6;
+  for (let index = 0; index <= CASE_REEL_STOP_INDEX + extraTail; index++) {
     if (index === CASE_REEL_STOP_INDEX) {
       const winningCard = createCaseReelCard(type, rewardName, rewardTier.id);
       winningCard.classList.add("is-winner");
@@ -618,7 +684,7 @@ function playCaseResultSound(tierId) {
   });
 }
 
-function openCase() {
+function openSingleCase() {
   if (caseIsOpening) {
     return;
   }
@@ -639,7 +705,7 @@ function openCase() {
   openCaseButton.disabled = true;
   caseTypeButtons.forEach(button => { button.disabled = true; });
   caseRewardActions.hidden = true;
-  caseMessage.textContent = "The case is opening...";
+  caseMessage.textContent = queuedCaseOpens > 1 ? "MULTI OPEN! Opening another case..." : "The case is opening...";
   caseReveal.classList.remove("has-awarded");
   caseReelTrack.style.transition = "none";
   caseReelTrack.style.transform = "translateX(0px)";
@@ -665,7 +731,7 @@ function openCase() {
     caseItemName.textContent = rewardName;
     caseSellButton.textContent = `SELL FOR ${caseSellValue(pendingCaseDrop).toLocaleString()} COINS`;
     caseRewardActions.hidden = false;
-    caseMessage.textContent = "CHOOSE TO SELL OR KEEP YOUR DROP";
+    caseMessage.textContent = queuedCaseOpens > 1 ? "CHOOSE TO SELL OR KEEP THIS DROP" : "CHOOSE TO SELL OR KEEP YOUR DROP";
     caseIsOpening = false;
     openCaseButton.disabled = false;
     caseTypeButtons.forEach(button => { button.disabled = false; });
@@ -676,18 +742,35 @@ function openCase() {
 
   caseReelTrack.addEventListener("transitionend", onReelStop);
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const reelStartDelay = reducedMotion ? 0 : 1550;
-  fallbackTimer = window.setTimeout(finishOpening, reducedMotion ? 100 : 7400);
+  const isQuickSpin = ownedQuickSpin;
+  const reelStartDelay = reducedMotion ? 0 : isQuickSpin ? 160 : 1550;
+  const reelDuration = isQuickSpin ? 800 : 5200;
+  fallbackTimer = window.setTimeout(finishOpening, reducedMotion ? 100 : isQuickSpin ? 2100 : 7400);
   window.setTimeout(() => {
     if (!caseIsOpening) return;
     startCaseRollSound();
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const markerCenter = caseReelViewport.clientWidth / 2;
       const winningCardCenter = winningCard.offsetLeft + winningCard.offsetWidth / 2;
-      caseReelTrack.style.transition = "";
+      caseReelTrack.style.transition = `transform ${reelDuration}ms cubic-bezier(0.08, 0.7, 0.14, 1)`;
       caseReelTrack.style.transform = `translateX(${markerCenter - winningCardCenter}px)`;
     }));
   }, reelStartDelay);
+}
+
+function openCase() {
+  if (caseIsOpening) {
+    return;
+  }
+  if (ownedMultiOpen && coins >= CASE_COST * 2) {
+    queuedCaseOpens = 2;
+    caseMessage.textContent = "MULTI OPEN! Opening two cases...";
+    openSingleCase();
+    return;
+  }
+
+  queuedCaseOpens = 0;
+  openSingleCase();
 }
 
 function showMenuPage(pageId) {
@@ -715,6 +798,18 @@ document.getElementById("cases-button").addEventListener("click", function () {
   showMenuPage("cases-page");
 });
 
+shopButton.addEventListener("click", function () {
+  showMenuPage("shop-page");
+});
+
+buyQuickSpinButton.addEventListener("click", function () {
+  buyGamePass("quick-spin");
+});
+
+buyMultiOpenButton.addEventListener("click", function () {
+  buyGamePass("multi-open");
+});
+
 function resolveCaseReward(keepDrop) {
   if (!pendingCaseDrop) return;
   const drop = pendingCaseDrop;
@@ -731,6 +826,15 @@ function resolveCaseReward(keepDrop) {
   }
   caseRewardActions.hidden = true;
   caseReveal.classList.remove("has-awarded", "is-spinning");
+
+  if (queuedCaseOpens > 0) {
+    queuedCaseOpens--;
+    if (queuedCaseOpens > 0) {
+      window.setTimeout(openSingleCase, 220);
+      return;
+    }
+  }
+  queuedCaseOpens = 0;
 }
 
 caseSellButton.addEventListener("click", () => resolveCaseReward(false));

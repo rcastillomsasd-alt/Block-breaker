@@ -105,6 +105,7 @@
         <nav class="menu-navigation" aria-label="Game menu">
           <button id="achievements-button" type="button">ACHIEVEMENTS</button>
           <button id="cases-button" type="button">CASES</button>
+          <button id="shop-button" type="button">SHOP</button>
           <button id="inventory-button" type="button">INVENTORY</button>
         </nav>
       </section>
@@ -179,6 +180,37 @@
         <p class="odds-note">Odds are normalized from the requested 60 / 30 / 15 / 3 weights.</p>
         <button class="menu-play-button case-open-button" id="open-case-button" type="button">OPEN CASE / 100 COINS</button>
         <p class="case-message" id="case-message" role="status">Earn 5 coins for every brick you break.</p>
+      </section>
+      <section class="menu-page" id="shop-page" hidden>
+        <header class="menu-page-heading">
+          <h2>SHOP</h2>
+          <button class="menu-back-button" type="button">BACK</button>
+        </header>
+        <div class="shop-list" aria-label="Game pass shop">
+          <article class="shop-item">
+            <div class="shop-item-copy">
+              <span class="shop-badge">BOOST</span>
+              <h3>QUICK SPIN</h3>
+              <p>Spins the case at turbo speed.</p>
+            </div>
+            <div class="shop-item-action">
+              <strong>2,499 COINS</strong>
+              <button class="shop-buy-button" id="buy-quick-spin" type="button">BUY</button>
+            </div>
+          </article>
+          <article class="shop-item">
+            <div class="shop-item-copy">
+              <span class="shop-badge">MULTI</span>
+              <h3>MULTI OPEN</h3>
+              <p>Open two cases in one click.</p>
+            </div>
+            <div class="shop-item-action">
+              <strong>5,499 COINS</strong>
+              <button class="shop-buy-button" id="buy-multi-open" type="button">BUY</button>
+            </div>
+          </article>
+        </div>
+        <p class="shop-status" id="shop-status">Buy a boost to speed up your rolls or open more cases at once.</p>
       </section>
       <section class="menu-page" id="inventory-page" hidden>
         <header class="menu-page-heading">
