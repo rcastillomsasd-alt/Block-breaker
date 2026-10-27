@@ -38,7 +38,8 @@ const caseRarity = document.getElementById("case-rarity");
 const caseItemName = document.getElementById("case-item-name");
 const caseRoundLabel = document.getElementById("case-round-label");
 const caseReelViewport = document.getElementById("case-reel-viewport");
-const caseReelTrack = document.getElementById("case-reel-track");
+const caseReelTrackTop = document.getElementById("case-reel-track-top");
+const caseReelTrackBottom = document.getElementById("case-reel-track-bottom");
 const caseCollectionLineup = document.getElementById("case-collection-lineup");
 const caseCollectionCount = document.getElementById("case-collection-count");
 const caseSoundButton = document.getElementById("case-sound-button");
@@ -538,9 +539,9 @@ function renderCaseCollectionLineup(type) {
   caseCollectionCount.textContent = `${cards.length} ITEMS`;
 }
 
-function fillCaseReel(type, tiers, rewardTier, rewardName) {
+function fillCaseReel(type, tiers, rewardTier, rewardName, track = caseReelTrackTop) {
   const reelCards = [];
-  const extraTail = ownedQuickSpin ? 10 : 6;
+  const extraTail = ownedQuickSpin ? 12 : 8;
   for (let index = 0; index <= CASE_REEL_STOP_INDEX + extraTail; index++) {
     if (index === CASE_REEL_STOP_INDEX) {
       const winningCard = createCaseReelCard(type, rewardName, rewardTier.id);
@@ -553,7 +554,7 @@ function fillCaseReel(type, tiers, rewardTier, rewardName) {
     const name = tier.items[Math.floor(Math.random() * tier.items.length)];
     reelCards.push(createCaseReelCard(type, name, tier.id));
   }
-  caseReelTrack.replaceChildren(...reelCards);
+  track.replaceChildren(...reelCards);
   return reelCards[CASE_REEL_STOP_INDEX];
 }
 
@@ -634,7 +635,7 @@ function startCaseRollSound() {
   if (!caseSoundEnabled || !getCaseAudioContext()) return;
   caseRollTickIndex = 0;
   const markerCenter = caseReelViewport.clientWidth / 2;
-  const cards = [...caseReelTrack.children];
+  const cards = [...caseReelTrackTop.children];
   let lastCardIndex = cards.reduce((index, card, cardIndex) => (
     card.offsetLeft + card.offsetWidth / 2 <= markerCenter ? cardIndex : index
   ), -1);
@@ -642,7 +643,7 @@ function startCaseRollSound() {
 
   const onReelFrame = () => {
     if (!caseIsOpening || !caseSoundEnabled) return;
-    const transform = window.getComputedStyle(caseReelTrack).transform;
+    const transform = window.getComputedStyle(caseReelTrackTop).transform;
     const offset = transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m41;
     const markerPosition = markerCenter - offset;
     while (lastCardIndex + 1 < cards.length) {
@@ -707,9 +708,18 @@ function openSingleCase() {
   caseRewardActions.hidden = true;
   caseMessage.textContent = queuedCaseOpens > 1 ? "MULTI OPEN! Opening another case..." : "The case is opening...";
   caseReveal.classList.remove("has-awarded");
-  caseReelTrack.style.transition = "none";
-  caseReelTrack.style.transform = "translateX(0px)";
-  const winningCard = fillCaseReel(type, tiers, rewardTier, rewardName);
+  [caseReelTrackTop, caseReelTrackBottom].forEach(track => {
+    track.style.transition = "none";
+    track.style.transform = "translateX(0px)";
+  });
+  const winningCard = fillCaseReel(type, tiers, rewardTier, rewardName, caseReelTrackTop);
+  const secondaryRewardTier = queuedCaseOpens > 1 ? chooseCaseTier(tiers) : rewardTier;
+  const secondaryRewardName = queuedCaseOpens > 1 ? secondaryRewardTier.items[Math.floor(Math.random() * secondaryRewardTier.items.length)] : rewardName;
+  if (queuedCaseOpens > 1) {
+    fillCaseReel(type, tiers, secondaryRewardTier, secondaryRewardName, caseReelTrackBottom);
+  } else {
+    caseReelTrackBottom.replaceChildren();
+  }
   caseReveal.dataset.tier = "grey";
   caseReveal.classList.add("is-spinning");
   playCaseOpenSound();
@@ -723,7 +733,7 @@ function openSingleCase() {
     window.clearTimeout(fallbackTimer);
     stopCaseRollSound();
     playCaseResultSound(rewardTier.id);
-    caseReelTrack.removeEventListener("transitionend", onReelStop);
+    [caseReelTrackTop, caseReelTrackBottom].forEach(track => track.removeEventListener("transitionend", onReelStop));
     caseReveal.classList.remove("is-spinning");
     caseReveal.classList.add("has-awarded");
     caseReveal.dataset.tier = rewardTier.id;
@@ -740,20 +750,28 @@ function openSingleCase() {
     if (event.propertyName === "transform") finishOpening();
   };
 
-  caseReelTrack.addEventListener("transitionend", onReelStop);
+  [caseReelTrackTop, caseReelTrackBottom].forEach(track => track.addEventListener("transitionend", onReelStop));
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const isQuickSpin = ownedQuickSpin;
-  const reelStartDelay = reducedMotion ? 0 : isQuickSpin ? 160 : 1550;
-  const reelDuration = isQuickSpin ? 800 : 5200;
-  fallbackTimer = window.setTimeout(finishOpening, reducedMotion ? 100 : isQuickSpin ? 2100 : 7400);
+  const reelStartDelay = reducedMotion ? 0 : isQuickSpin ? 400 : 1500;
+  const reelDuration = isQuickSpin ? 1600 : 4700;
+  fallbackTimer = window.setTimeout(finishOpening, reducedMotion ? 100 : isQuickSpin ? 3200 : 7400);
   window.setTimeout(() => {
     if (!caseIsOpening) return;
     startCaseRollSound();
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const markerCenter = caseReelViewport.clientWidth / 2;
       const winningCardCenter = winningCard.offsetLeft + winningCard.offsetWidth / 2;
-      caseReelTrack.style.transition = `transform ${reelDuration}ms cubic-bezier(0.08, 0.7, 0.14, 1)`;
-      caseReelTrack.style.transform = `translateX(${markerCenter - winningCardCenter}px)`;
+      const secondaryCardCenter = queuedCaseOpens > 1 ? caseReelTrackBottom.firstElementChild.offsetLeft + caseReelTrackBottom.firstElementChild.offsetWidth / 2 : 0;
+      caseReelTrackTop.style.transition = `transform ${reelDuration}ms cubic-bezier(0.08, 0.7, 0.14, 1)`;
+      caseReelTrackTop.style.transform = `translateX(${markerCenter - winningCardCenter}px)`;
+      if (queuedCaseOpens > 1) {
+        caseReelTrackBottom.style.transition = `transform ${reelDuration + 120}ms cubic-bezier(0.08, 0.7, 0.14, 1)`;
+        caseReelTrackBottom.style.transform = `translateX(${markerCenter - secondaryCardCenter}px)`;
+      } else {
+        caseReelTrackBottom.style.transition = "none";
+        caseReelTrackBottom.style.transform = "translateX(0px)";
+      }
     }));
   }, reelStartDelay);
 }
@@ -867,9 +885,11 @@ caseTypeButtons.forEach(button => {
     caseReveal.dataset.tier = "grey";
     caseReveal.classList.remove("has-awarded", "is-spinning");
     caseRoundLabel.textContent = `COLLECTION: ${activeCaseType.toUpperCase()}`;
-    caseReelTrack.replaceChildren();
-    caseReelTrack.style.transition = "none";
-    caseReelTrack.style.transform = "translateX(0px)";
+    [caseReelTrackTop, caseReelTrackBottom].forEach(track => {
+      track.replaceChildren();
+      track.style.transition = "none";
+      track.style.transform = "translateX(0px)";
+    });
     caseRarity.textContent = "READY";
     caseItemName.textContent = activeCaseType === "trail" ? "BALL TRAIL CASE" : `${activeCaseType.toUpperCase()} SKIN CASE`;
     caseMessage.textContent = "Earn 5 coins for every brick you break.";

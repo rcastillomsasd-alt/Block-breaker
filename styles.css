@@ -1082,6 +1082,14 @@ canvas {
   border-bottom: 8px solid #fff0ad;
 }
 
+.case-reel-stack {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 6px;
+  height: 100%;
+  padding: 8px 0;
+}
+
 .case-reel-track {
   display: flex;
   width: max-content;
@@ -1091,6 +1099,10 @@ canvas {
   padding: 0 10px;
   transition: transform 5.2s cubic-bezier(0.08, 0.72, 0.1, 1);
   will-change: transform;
+}
+
+.case-reel-track-bottom {
+  opacity: 0.96;
 }
 
 .case-reel-card {
