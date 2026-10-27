@@ -1025,7 +1025,7 @@ canvas {
   z-index: 3;
   align-self: end;
   width: 100%;
-  height: clamp(112px, 19vh, 170px);
+  height: clamp(148px, 22vh, 190px);
   margin-top: auto;
   overflow: hidden;
   border: 1px solid rgb(255 255 255 / 13%);
@@ -1089,21 +1089,21 @@ canvas {
   grid-template-rows: 1fr 1fr;
   align-items: center;
   justify-items: center;
-  gap: 8px;
+  gap: 12px;
   height: 100%;
-  padding: 6px 0;
+  padding: 10px 0 12px;
   overflow: visible;
 }
 
 .case-reel-track {
   display: flex;
   width: max-content;
-  min-height: 54px;
-  height: 54px;
+  min-height: 60px;
+  height: 60px;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 10px;
+  padding: 0 12px;
   transition: transform 5.2s cubic-bezier(0.08, 0.72, 0.1, 1);
   will-change: transform;
 }
@@ -1115,7 +1115,7 @@ canvas {
 .case-reel-track-bottom {
   z-index: 3;
   opacity: 1;
-  filter: drop-shadow(0 0 12px rgba(255, 200, 94, 0.22));
+  filter: drop-shadow(0 0 14px rgba(255, 200, 94, 0.28));
 }
 
 .case-reel-card {

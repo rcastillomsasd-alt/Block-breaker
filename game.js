@@ -747,8 +747,15 @@ function openSingleCase(openCount = 1) {
     caseReveal.classList.remove("is-spinning");
     caseReveal.classList.add("has-awarded");
     caseReveal.dataset.tier = topRewardTier.id;
-    caseRarity.textContent = openCount > 1 ? "MULTI OPEN" : topRewardTier.label;
-    caseItemName.textContent = openCount > 1 ? `${rewards[0].name} + ${rewards[1].name}` : rewards[0].name;
+    if (openCount > 1) {
+      const firstTierLabel = rewards[0].tier.toUpperCase();
+      const secondTierLabel = rewards[1].tier.toUpperCase();
+      caseRarity.textContent = `${firstTierLabel} + ${secondTierLabel}`;
+      caseItemName.textContent = `${rewards[0].name} + ${rewards[1].name}`;
+    } else {
+      caseRarity.textContent = topRewardTier.label;
+      caseItemName.textContent = rewards[0].name;
+    }
     const totalSellValue = pendingMultiRewards.reduce((total, reward) => total + caseSellValue({ tier: reward.tier, name: reward.name, type: reward.type }), 0);
     caseSellButton.textContent = `SELL FOR ${totalSellValue.toLocaleString()} COINS`;
     caseRewardActions.hidden = false;
