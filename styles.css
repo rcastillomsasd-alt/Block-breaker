@@ -1083,19 +1083,23 @@ canvas {
 }
 
 .case-reel-stack {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-rows: 1fr 1fr;
   align-items: center;
   justify-items: center;
-  gap: 6px;
+  gap: 8px;
   height: 100%;
-  padding: 8px 0;
+  padding: 6px 0;
+  overflow: visible;
 }
 
 .case-reel-track {
   display: flex;
   width: max-content;
-  height: 48%;
+  min-height: 54px;
+  height: 54px;
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -1104,8 +1108,14 @@ canvas {
   will-change: transform;
 }
 
+.case-reel-track-top {
+  z-index: 2;
+}
+
 .case-reel-track-bottom {
-  opacity: 0.96;
+  z-index: 3;
+  opacity: 1;
+  filter: drop-shadow(0 0 12px rgba(255, 200, 94, 0.22));
 }
 
 .case-reel-card {
