@@ -98,7 +98,7 @@ let ballDrops = [];
 let trailDrops = [];
 let caseIsOpening = false;
 let pendingCaseDrop = null;
-let queuedCaseOpens = 0;
+let pendingMultiRewards = [];
 let caseSoundEnabled = true;
 let caseAudioContext = null;
 let caseRollFrame = null;
@@ -685,45 +685,55 @@ function playCaseResultSound(tierId) {
   });
 }
 
-function openSingleCase() {
+function openSingleCase(openCount = 1) {
   if (caseIsOpening) {
     return;
   }
-  if (coins < CASE_COST) {
-    caseMessage.textContent = `You need ${CASE_COST - coins} more coins to open a case.`;
+  if (coins < CASE_COST * openCount) {
+    caseMessage.textContent = `You need ${CASE_COST * openCount - coins} more coins to open ${openCount} case${openCount > 1 ? "s" : ""}.`;
     return;
   }
 
   const type = activeCaseType;
   caseReveal.dataset.caseType = type;
   const tiers = caseTiers(type);
-  const rewardTier = chooseCaseTier(tiers);
-  const rewardName = rewardTier.items[Math.floor(Math.random() * rewardTier.items.length)];
-  coins -= CASE_COST;
+  const rewards = [];
+  for (let index = 0; index < openCount; index++) {
+    const rewardTier = chooseCaseTier(tiers);
+    const rewardName = rewardTier.items[Math.floor(Math.random() * rewardTier.items.length)];
+    rewards.push({ type, tier: rewardTier.id, name: rewardName });
+  }
+
+  pendingMultiRewards = rewards;
+  coins -= CASE_COST * openCount;
   saveEconomy();
   updateCoinDisplay();
   caseIsOpening = true;
   openCaseButton.disabled = true;
   caseTypeButtons.forEach(button => { button.disabled = true; });
   caseRewardActions.hidden = true;
-  caseMessage.textContent = queuedCaseOpens > 1 ? "MULTI OPEN! Opening another case..." : "The case is opening...";
+  caseMessage.textContent = openCount > 1 ? "MULTI OPEN! Both cases are rolling..." : "The case is opening...";
   caseReveal.classList.remove("has-awarded");
   [caseReelTrackTop, caseReelTrackBottom].forEach(track => {
     track.style.transition = "none";
     track.style.transform = "translateX(0px)";
   });
-  const winningCard = fillCaseReel(type, tiers, rewardTier, rewardName, caseReelTrackTop);
-  const secondaryRewardTier = queuedCaseOpens > 1 ? chooseCaseTier(tiers) : rewardTier;
-  const secondaryRewardName = queuedCaseOpens > 1 ? secondaryRewardTier.items[Math.floor(Math.random() * secondaryRewardTier.items.length)] : rewardName;
-  if (queuedCaseOpens > 1) {
-    fillCaseReel(type, tiers, secondaryRewardTier, secondaryRewardName, caseReelTrackBottom);
+
+  const topReward = rewards[0];
+  const topRewardTier = caseTiers(type).find(tier => tier.id === topReward.tier) || caseTiers(type)[0];
+  const winningCard = fillCaseReel(type, tiers, topRewardTier, topReward.name, caseReelTrackTop);
+  if (openCount > 1) {
+    const secondReward = rewards[1];
+    const secondRewardTier = caseTiers(type).find(tier => tier.id === secondReward.tier) || caseTiers(type)[0];
+    fillCaseReel(type, tiers, secondRewardTier, secondReward.name, caseReelTrackBottom);
   } else {
     caseReelTrackBottom.replaceChildren();
   }
+
   caseReveal.dataset.tier = "grey";
   caseReveal.classList.add("is-spinning");
   playCaseOpenSound();
-  pendingCaseDrop = { type, tier: rewardTier.id, name: rewardName };
+  pendingCaseDrop = { type, tier: topReward.tier, name: topReward.name };
 
   let fallbackTimer;
   let openingFinished = false;
@@ -732,16 +742,17 @@ function openSingleCase() {
     openingFinished = true;
     window.clearTimeout(fallbackTimer);
     stopCaseRollSound();
-    playCaseResultSound(rewardTier.id);
+    playCaseResultSound(topRewardTier.id);
     [caseReelTrackTop, caseReelTrackBottom].forEach(track => track.removeEventListener("transitionend", onReelStop));
     caseReveal.classList.remove("is-spinning");
     caseReveal.classList.add("has-awarded");
-    caseReveal.dataset.tier = rewardTier.id;
-    caseRarity.textContent = rewardTier.label;
-    caseItemName.textContent = rewardName;
-    caseSellButton.textContent = `SELL FOR ${caseSellValue(pendingCaseDrop).toLocaleString()} COINS`;
+    caseReveal.dataset.tier = topRewardTier.id;
+    caseRarity.textContent = openCount > 1 ? "MULTI OPEN" : topRewardTier.label;
+    caseItemName.textContent = openCount > 1 ? `${rewards[0].name} + ${rewards[1].name}` : rewards[0].name;
+    const totalSellValue = pendingMultiRewards.reduce((total, reward) => total + caseSellValue({ tier: reward.tier, name: reward.name, type: reward.type }), 0);
+    caseSellButton.textContent = `SELL FOR ${totalSellValue.toLocaleString()} COINS`;
     caseRewardActions.hidden = false;
-    caseMessage.textContent = queuedCaseOpens > 1 ? "CHOOSE TO SELL OR KEEP THIS DROP" : "CHOOSE TO SELL OR KEEP YOUR DROP";
+    caseMessage.textContent = openCount > 1 ? "CHOOSE TO SELL OR KEEP BOTH DROPS" : "CHOOSE TO SELL OR KEEP YOUR DROP";
     caseIsOpening = false;
     openCaseButton.disabled = false;
     caseTypeButtons.forEach(button => { button.disabled = false; });
@@ -762,10 +773,11 @@ function openSingleCase() {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const markerCenter = caseReelViewport.clientWidth / 2;
       const winningCardCenter = winningCard.offsetLeft + winningCard.offsetWidth / 2;
-      const secondaryCardCenter = queuedCaseOpens > 1 ? caseReelTrackBottom.firstElementChild.offsetLeft + caseReelTrackBottom.firstElementChild.offsetWidth / 2 : 0;
+      const secondaryCard = caseReelTrackBottom.firstElementChild;
+      const secondaryCardCenter = openCount > 1 && secondaryCard ? secondaryCard.offsetLeft + secondaryCard.offsetWidth / 2 : 0;
       caseReelTrackTop.style.transition = `transform ${reelDuration}ms cubic-bezier(0.08, 0.7, 0.14, 1)`;
       caseReelTrackTop.style.transform = `translateX(${markerCenter - winningCardCenter}px)`;
-      if (queuedCaseOpens > 1) {
+      if (openCount > 1) {
         caseReelTrackBottom.style.transition = `transform ${reelDuration + 120}ms cubic-bezier(0.08, 0.7, 0.14, 1)`;
         caseReelTrackBottom.style.transform = `translateX(${markerCenter - secondaryCardCenter}px)`;
       } else {
@@ -781,14 +793,11 @@ function openCase() {
     return;
   }
   if (ownedMultiOpen && coins >= CASE_COST * 2) {
-    queuedCaseOpens = 2;
-    caseMessage.textContent = "MULTI OPEN! Opening two cases...";
-    openSingleCase();
+    openSingleCase(2);
     return;
   }
 
-  queuedCaseOpens = 0;
-  openSingleCase();
+  openSingleCase(1);
 }
 
 function showMenuPage(pageId) {
@@ -829,30 +838,29 @@ buyMultiOpenButton.addEventListener("click", function () {
 });
 
 function resolveCaseReward(keepDrop) {
-  if (!pendingCaseDrop) return;
-  const drop = pendingCaseDrop;
+  if (!pendingCaseDrop && pendingMultiRewards.length === 0) return;
+
+  const rewards = pendingMultiRewards.length > 0 ? [...pendingMultiRewards] : [pendingCaseDrop];
   pendingCaseDrop = null;
+  pendingMultiRewards = [];
+
   if (keepDrop) {
-    setOwnedDrops(drop.type, [{ tier: drop.tier, name: drop.name }, ...ownedDrops(drop.type)]);
+    rewards.forEach(drop => {
+      setOwnedDrops(drop.type, [{ tier: drop.tier, name: drop.name }, ...ownedDrops(drop.type)]);
+    });
     saveEconomy();
-    renderSkinInventory(drop.type);
-    caseMessage.textContent = `${drop.name.toUpperCase()} ADDED TO YOUR COLLECTION`;
+    rewards.forEach(drop => renderSkinInventory(drop.type));
+    const rewardNames = rewards.map(drop => drop.name.toUpperCase()).join(" + ");
+    caseMessage.textContent = `${rewardNames} ADDED TO YOUR COLLECTION`;
   } else {
-    const sellValue = caseSellValue(drop);
+    const sellValue = rewards.reduce((total, drop) => total + caseSellValue({ tier: drop.tier, name: drop.name, type: drop.type }), 0);
     addCoins(sellValue);
-    caseMessage.textContent = `${drop.name.toUpperCase()} SOLD FOR ${sellValue.toLocaleString()} COINS`;
+    const rewardNames = rewards.map(drop => drop.name.toUpperCase()).join(" + ");
+    caseMessage.textContent = `${rewardNames} SOLD FOR ${sellValue.toLocaleString()} COINS`;
   }
+
   caseRewardActions.hidden = true;
   caseReveal.classList.remove("has-awarded", "is-spinning");
-
-  if (queuedCaseOpens > 0) {
-    queuedCaseOpens--;
-    if (queuedCaseOpens > 0) {
-      window.setTimeout(openSingleCase, 220);
-      return;
-    }
-  }
-  queuedCaseOpens = 0;
 }
 
 caseSellButton.addEventListener("click", () => resolveCaseReward(false));
@@ -890,6 +898,8 @@ caseTypeButtons.forEach(button => {
       track.style.transition = "none";
       track.style.transform = "translateX(0px)";
     });
+    pendingCaseDrop = null;
+    pendingMultiRewards = [];
     caseRarity.textContent = "READY";
     caseItemName.textContent = activeCaseType === "trail" ? "BALL TRAIL CASE" : `${activeCaseType.toUpperCase()} SKIN CASE`;
     caseMessage.textContent = "Earn 5 coins for every brick you break.";
