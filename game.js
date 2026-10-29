@@ -434,6 +434,44 @@ document.addEventListener("visibilitychange", function () {
   }
 });
 
+function updateInventoryDeleteButtons() {
+  document.querySelectorAll(".inventory-delete-button").forEach(button => {
+    const type = button.dataset.type;
+    const inventory = type === "ball" ? ballInventory : type === "trail" ? trailInventory : paddleInventory;
+    const hasSelection = Boolean(inventory.querySelector(".inventory-delete-checkbox:checked"));
+    button.disabled = !hasSelection;
+  });
+}
+
+function deleteSelectedInventory(type) {
+  const inventory = type === "ball" ? ballInventory : type === "trail" ? trailInventory : paddleInventory;
+  const selectedNames = [...inventory.querySelectorAll(".inventory-delete-checkbox:checked")].map(check => check.dataset.name);
+  if (selectedNames.length === 0) {
+    return;
+  }
+
+  const drops = ownedDrops(type).filter(drop => !selectedNames.includes(drop.name));
+  if (type === "ball") {
+    ballDrops = drops;
+    if (equippedBallSkin && selectedNames.includes(equippedBallSkin)) {
+      equippedBallSkin = null;
+    }
+  } else if (type === "trail") {
+    trailDrops = drops;
+    if (equippedTrail && selectedNames.includes(equippedTrail)) {
+      equippedTrail = null;
+    }
+  } else {
+    paddleDrops = drops;
+    if (equippedPaddleSkin && selectedNames.includes(equippedPaddleSkin)) {
+      equippedPaddleSkin = null;
+    }
+  }
+
+  saveEconomy();
+  renderSkinInventory(type);
+}
+
 function renderSkinInventory(type) {
   const inventory = type === "ball" ? ballInventory : type === "trail" ? trailInventory : paddleInventory;
   const equippedName = type === "ball" ? equippedBallSkinName : type === "trail" ? equippedTrailName : equippedPaddleSkinName;
@@ -447,6 +485,7 @@ function renderSkinInventory(type) {
     emptyMessage.className = "inventory-empty";
     emptyMessage.textContent = `No ${type} skins yet. Open a ${type} case to collect one.`;
     inventory.append(emptyMessage);
+    updateInventoryDeleteButtons();
     return;
   }
 
@@ -455,6 +494,20 @@ function renderSkinInventory(type) {
     const isEquipped = equippedSkin(type) === drop.name;
     const item = document.createElement("li");
     item.className = `inventory-item rarity-${drop.tier}`;
+
+    const selectWrap = document.createElement("label");
+    selectWrap.className = "inventory-delete-toggle";
+    selectWrap.setAttribute("aria-label", `Select ${drop.name} for deletion`);
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "inventory-delete-checkbox";
+    checkbox.dataset.name = drop.name;
+    checkbox.dataset.type = type;
+    checkbox.addEventListener("change", updateInventoryDeleteButtons);
+    const checkmark = document.createElement("span");
+    checkmark.className = "inventory-delete-checkmark";
+    selectWrap.append(checkbox, checkmark);
+
     const swatch = document.createElement("span");
     swatch.className = type === "ball"
       ? "inventory-swatch ball-swatch"
@@ -484,9 +537,11 @@ function renderSkinInventory(type) {
       saveEconomy();
       renderSkinInventory(type);
     });
-    item.append(swatch, details, equipButton);
+    item.append(selectWrap, swatch, details, equipButton);
     inventory.append(item);
   }
+
+  updateInventoryDeleteButtons();
 }
 
 function chooseCaseTier(tiers) {
@@ -515,7 +570,7 @@ function createCaseReelCard(type, name, tierId) {
     art.style.setProperty("--item-finish", `linear-gradient(110deg, ${palette.colors.join(", ")})`);
   }
 
-  const effectType = palette.effect || (tierId === "gold" ? "coil" : tierId === "purple" ? "orbit" : "");
+  const effectType = tierId === "gold" ? (palette.effect || "coil") : "";
   if (effectType) art.dataset.effect = effectType;
   const effect = document.createElement("div");
   effect.className = "case-reel-card-effect";
@@ -922,6 +977,14 @@ caseTypeButtons.forEach(button => {
 });
 
 renderCaseCollectionLineup(activeCaseType);
+
+document.querySelectorAll(".inventory-delete-button").forEach(button => {
+  button.addEventListener("click", function () {
+    deleteSelectedInventory(button.dataset.type);
+  });
+});
+
+updateInventoryDeleteButtons();
 
 document.getElementById("inventory-button").addEventListener("click", function () {
   showMenuPage("inventory-page");

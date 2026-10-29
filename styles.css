@@ -1758,9 +1758,40 @@ canvas {
 }
 
 .menu-inventory-section h3 {
-  margin: 0 0 8px;
+  margin: 0;
   color: #a8b8b8;
   font: bold 10px "Courier New", monospace;
+}
+
+.inventory-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.inventory-delete-button {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgb(255 255 255 / 24%);
+  background: transparent;
+  color: #f5b1b1;
+  cursor: pointer;
+  font: bold 8px "Courier New", monospace;
+}
+
+.inventory-delete-button:hover,
+.inventory-delete-button:focus-visible {
+  border-color: #ff7c7c;
+  color: #ffd0d0;
+}
+
+.inventory-delete-button:disabled {
+  border-color: rgb(255 255 255 / 10%);
+  background: rgb(255 255 255 / 3%);
+  color: #586666;
+  cursor: default;
 }
 
 .menu-inventory-section .equipped-skin-status {
@@ -1776,6 +1807,51 @@ canvas {
   border-left: 3px solid #c4ccd0;
   background: rgb(255 255 255 / 4%);
   font-size: 11px;
+}
+
+.inventory-delete-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.inventory-delete-checkbox {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.inventory-delete-checkmark {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgb(255 255 255 / 36%);
+  background: rgb(255 255 255 / 4%);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 15%);
+}
+
+.inventory-delete-checkbox:checked + .inventory-delete-checkmark {
+  border-color: #ff7c7c;
+  background: linear-gradient(135deg, rgba(255, 122, 122, 0.7), rgba(255, 197, 108, 0.32));
+  box-shadow: 0 0 12px rgba(255, 124, 124, 0.35);
+}
+
+.inventory-delete-checkbox:checked + .inventory-delete-checkmark::after {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  content: "";
+  transform: rotate(45deg);
 }
 
 .inventory-item.rarity-blue { border-left-color: #55a9ff; }
