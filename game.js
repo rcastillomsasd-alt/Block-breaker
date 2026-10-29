@@ -514,7 +514,13 @@ function createCaseReelCard(type, name, tierId) {
   if (palette.colors) {
     art.style.setProperty("--item-finish", `linear-gradient(110deg, ${palette.colors.join(", ")})`);
   }
-  if (palette.effect) art.dataset.effect = palette.effect;
+
+  const effectType = palette.effect || (tierId === "gold" ? "coil" : tierId === "purple" ? "orbit" : "");
+  if (effectType) art.dataset.effect = effectType;
+  const effect = document.createElement("div");
+  effect.className = "case-reel-card-effect";
+  if (effectType) effect.dataset.effect = effectType;
+  art.append(effect);
 
   const label = document.createElement("div");
   label.className = "case-reel-card-label";
