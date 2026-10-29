@@ -722,10 +722,11 @@ function openSingleCase(openCount = 1) {
   const topReward = rewards[0];
   const topRewardTier = caseTiers(type).find(tier => tier.id === topReward.tier) || caseTiers(type)[0];
   const winningCard = fillCaseReel(type, tiers, topRewardTier, topReward.name, caseReelTrackTop);
+  let secondaryWinningCard = null;
   if (openCount > 1) {
     const secondReward = rewards[1];
     const secondRewardTier = caseTiers(type).find(tier => tier.id === secondReward.tier) || caseTiers(type)[0];
-    fillCaseReel(type, tiers, secondRewardTier, secondReward.name, caseReelTrackBottom);
+    secondaryWinningCard = fillCaseReel(type, tiers, secondRewardTier, secondReward.name, caseReelTrackBottom);
   } else {
     caseReelTrackBottom.replaceChildren();
   }
@@ -780,8 +781,9 @@ function openSingleCase(openCount = 1) {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const markerCenter = caseReelViewport.clientWidth / 2;
       const winningCardCenter = winningCard.offsetLeft + winningCard.offsetWidth / 2;
-      const secondaryCard = caseReelTrackBottom.firstElementChild;
-      const secondaryCardCenter = openCount > 1 && secondaryCard ? secondaryCard.offsetLeft + secondaryCard.offsetWidth / 2 : 0;
+      const secondaryCardCenter = openCount > 1 && secondaryWinningCard
+        ? secondaryWinningCard.offsetLeft + secondaryWinningCard.offsetWidth / 2
+        : 0;
       caseReelTrackTop.style.transition = `transform ${reelDuration}ms cubic-bezier(0.08, 0.7, 0.14, 1)`;
       caseReelTrackTop.style.transform = `translateX(${markerCenter - winningCardCenter}px)`;
       if (openCount > 1) {
