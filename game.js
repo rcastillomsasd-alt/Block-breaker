@@ -33,6 +33,12 @@ const gameMenuButton = document.getElementById("game-menu-button");
 const menuCoinCount = document.getElementById("menu-coin-count");
 const coinCount = document.getElementById("coin-count");
 const menuPages = document.querySelectorAll(".menu-page");
+const plinkoPage = document.getElementById("plinko-page");
+const plinkoCanvas = document.getElementById("plinko-board");
+const plinkoCtx = plinkoCanvas.getContext("2d");
+const plinkoBallCount = document.getElementById("plinko-ball-count");
+const plinkoDropButton = document.getElementById("plinko-drop-button");
+const plinkoStatus = document.getElementById("plinko-status");
 const caseReveal = document.getElementById("case-reveal");
 const caseRarity = document.getElementById("case-rarity");
 const caseItemName = document.getElementById("case-item-name");
@@ -110,6 +116,11 @@ let equippedTrail = null;
 let activeCaseType = "paddle";
 let ownedQuickSpin = false;
 let ownedMultiOpen = false;
+let plinkoBalls = [];
+let plinkoQueue = 0;
+let plinkoReleaseCountdown = 0;
+let plinkoBatchPayout = 0;
+let plinkoBatchActive = false;
 
 const ACHIEVEMENTS = [
   { id: "speed-run", title: "Quick Finish" },
@@ -119,6 +130,19 @@ const ACHIEVEMENTS = [
 const ACHIEVEMENT_STORAGE_KEY = "block-breaker-achievements";
 const ECONOMY_STORAGE_KEY = "block-breaker-economy";
 const CASE_COST = 100;
+const PLINKO_COST = 100;
+const PLINKO_LEFT = 66;
+const PLINKO_RIGHT = 534;
+const PLINKO_TOP = 48;
+const PLINKO_FLOOR = 390;
+const PLINKO_SLOT_WIDTH = 36;
+const PLINKO_PAYOUTS = [10, 5, 3, 2, 1.5, 1, 0.5, 1, 1.5, 2, 3, 5, 10];
+const PLINKO_PEGS = Array.from({ length: 12 }, (_, row) =>
+  Array.from({ length: row + 1 }, (_, column) => ({
+    x: WIDTH / 2 - row * 18 + column * 36,
+    y: PLINKO_TOP + row * 23
+  }))
+).flat();
 const CASE_REEL_STOP_INDEX = 24;
 const QUICK_SPIN_COST = 2499;
 const MULTI_OPEN_COST = 5499;
@@ -307,6 +331,7 @@ function loadAchievements() {
 function updateCoinDisplay() {
   menuCoinCount.textContent = coins.toLocaleString();
   coinCount.textContent = coins.toLocaleString();
+  updatePlinkoControls();
 }
 
 function updateShopButtons() {
@@ -879,6 +904,165 @@ function showMenuPage(pageId) {
   }
 }
 
+function updatePlinkoControls() {
+  const count = Number(plinkoBallCount.value);
+  plinkoDropButton.textContent = `DROP ${count} ${count === 1 ? "BALL" : "BALLS"} / ${(count * PLINKO_COST).toLocaleString()} COINS`;
+  plinkoDropButton.disabled = plinkoBatchActive;
+}
+
+function startPlinkoDrop() {
+  const count = Number(plinkoBallCount.value);
+  const cost = count * PLINKO_COST;
+  if (plinkoBatchActive) return;
+  if (coins < cost) {
+    plinkoStatus.textContent = `You need ${(cost - coins).toLocaleString()} more coins to drop ${count} ${count === 1 ? "ball" : "balls"}.`;
+    return;
+  }
+
+  coins -= cost;
+  updateCoinDisplay();
+  saveEconomy();
+  plinkoQueue = count;
+  plinkoReleaseCountdown = 0;
+  plinkoBatchPayout = 0;
+  plinkoBatchActive = true;
+  plinkoStatus.textContent = `${count} ${count === 1 ? "ball" : "balls"} in play. Good luck.`;
+  updatePlinkoControls();
+}
+
+function updatePlinko() {
+  if (!plinkoBatchActive) return;
+
+  if (plinkoQueue > 0) {
+    if (plinkoReleaseCountdown <= 0) {
+      plinkoBalls.push({ x: WIDTH / 2 + (Math.random() - 0.5) * 5, y: 20, vx: (Math.random() - 0.5) * 0.5, vy: 0 });
+      plinkoQueue--;
+      plinkoReleaseCountdown = 9;
+    } else {
+      plinkoReleaseCountdown--;
+    }
+  }
+
+  for (let index = plinkoBalls.length - 1; index >= 0; index--) {
+    const ball = plinkoBalls[index];
+    ball.vy = Math.min(ball.vy + 0.19, 7);
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    if (ball.x < PLINKO_LEFT + 6) {
+      ball.x = PLINKO_LEFT + 6;
+      ball.vx = Math.abs(ball.vx) * 0.72;
+    } else if (ball.x > PLINKO_RIGHT - 6) {
+      ball.x = PLINKO_RIGHT - 6;
+      ball.vx = -Math.abs(ball.vx) * 0.72;
+    }
+
+    for (const peg of PLINKO_PEGS) {
+      const dx = ball.x - peg.x;
+      const dy = ball.y - peg.y;
+      const distance = Math.hypot(dx, dy);
+      const minimumDistance = 10;
+      if (distance === 0 || distance >= minimumDistance) continue;
+
+      const normalX = dx / distance;
+      const normalY = dy / distance;
+      const velocityAlongNormal = ball.vx * normalX + ball.vy * normalY;
+      ball.x = peg.x + normalX * minimumDistance;
+      ball.y = peg.y + normalY * minimumDistance;
+      if (velocityAlongNormal < 0) {
+        ball.vx = (ball.vx - 1.72 * velocityAlongNormal * normalX) * 0.985 + (Math.random() - 0.5) * 0.08;
+        ball.vy = (ball.vy - 1.72 * velocityAlongNormal * normalY) * 0.985;
+      }
+    }
+
+    if (ball.y > 344) {
+      for (let divider = 1; divider < PLINKO_PAYOUTS.length; divider++) {
+        const dividerX = PLINKO_LEFT + divider * PLINKO_SLOT_WIDTH;
+        if (Math.abs(ball.x - dividerX) < 6 && ball.y < PLINKO_FLOOR - 6) {
+          ball.x = dividerX + (ball.x < dividerX ? -6 : 6);
+          ball.vx = (ball.x < dividerX ? -1 : 1) * Math.abs(ball.vx) * 0.55;
+        }
+      }
+    }
+
+    if (ball.y >= PLINKO_FLOOR - 6) {
+      const slot = Math.max(0, Math.min(PLINKO_PAYOUTS.length - 1, Math.floor((ball.x - PLINKO_LEFT) / PLINKO_SLOT_WIDTH)));
+      const multiplier = PLINKO_PAYOUTS[slot];
+      const payout = Math.floor(PLINKO_COST * multiplier);
+      plinkoBatchPayout += payout;
+      addCoins(payout);
+      plinkoBalls.splice(index, 1);
+      plinkoStatus.textContent = `Landed in ${multiplier}x: +${payout.toLocaleString()} coins. Batch return: ${plinkoBatchPayout.toLocaleString()}.`;
+    }
+  }
+
+  if (plinkoQueue === 0 && plinkoBalls.length === 0) {
+    plinkoBatchActive = false;
+    plinkoStatus.textContent = `DROP COMPLETE. Total return: ${plinkoBatchPayout.toLocaleString()} coins.`;
+    updatePlinkoControls();
+  }
+}
+
+function drawPlinko() {
+  const gradient = plinkoCtx.createLinearGradient(0, 0, 0, plinkoCanvas.height);
+  gradient.addColorStop(0, "#172a2a");
+  gradient.addColorStop(1, "#10191a");
+  plinkoCtx.fillStyle = gradient;
+  plinkoCtx.fillRect(0, 0, plinkoCanvas.width, plinkoCanvas.height);
+
+  plinkoCtx.fillStyle = "#263b3a";
+  plinkoCtx.fillRect(PLINKO_LEFT - 8, 24, 8, PLINKO_FLOOR - 24);
+  plinkoCtx.fillRect(PLINKO_RIGHT, 24, 8, PLINKO_FLOOR - 24);
+  plinkoCtx.fillStyle = "#59716a";
+  plinkoCtx.fillRect(PLINKO_LEFT, PLINKO_FLOOR, PLINKO_RIGHT - PLINKO_LEFT, 4);
+
+  for (const peg of PLINKO_PEGS) {
+    plinkoCtx.beginPath();
+    plinkoCtx.fillStyle = "#a9c5b5";
+    plinkoCtx.shadowColor = "#77e1c0";
+    plinkoCtx.shadowBlur = 5;
+    plinkoCtx.arc(peg.x, peg.y, 3.5, 0, Math.PI * 2);
+    plinkoCtx.fill();
+  }
+  plinkoCtx.shadowBlur = 0;
+
+  plinkoCtx.fillStyle = "#20302e";
+  plinkoCtx.fillRect(PLINKO_LEFT, 344, PLINKO_RIGHT - PLINKO_LEFT, PLINKO_FLOOR - 344);
+  plinkoCtx.font = "bold 11px Courier New";
+  plinkoCtx.textAlign = "center";
+  PLINKO_PAYOUTS.forEach((multiplier, index) => {
+    const slotX = PLINKO_LEFT + index * PLINKO_SLOT_WIDTH;
+    if (index > 0) {
+      plinkoCtx.fillStyle = "#71877b";
+      plinkoCtx.fillRect(slotX - 1, 344, 2, PLINKO_FLOOR - 344);
+    }
+    plinkoCtx.fillStyle = multiplier >= 5 ? "#ffbd63" : multiplier < 1 ? "#f27a73" : "#d2e4d7";
+    plinkoCtx.fillText(`${multiplier}x`, slotX + PLINKO_SLOT_WIDTH / 2, 369);
+  });
+
+  for (const ball of plinkoBalls) {
+    const ballGradient = plinkoCtx.createRadialGradient(ball.x - 2, ball.y - 3, 1, ball.x, ball.y, 7);
+    ballGradient.addColorStop(0, "#fff4d3");
+    ballGradient.addColorStop(0.35, "#ffab4d");
+    ballGradient.addColorStop(1, "#c34b35");
+    plinkoCtx.beginPath();
+    plinkoCtx.fillStyle = ballGradient;
+    plinkoCtx.shadowColor = "#ff9848";
+    plinkoCtx.shadowBlur = 8;
+    plinkoCtx.arc(ball.x, ball.y, 6, 0, Math.PI * 2);
+    plinkoCtx.fill();
+    plinkoCtx.shadowBlur = 0;
+  }
+}
+
+document.getElementById("plinko-button").addEventListener("click", function () {
+  showMenuPage("plinko-page");
+  drawPlinko();
+});
+
+plinkoBallCount.addEventListener("change", updatePlinkoControls);
+plinkoDropButton.addEventListener("click", startPlinkoDrop);
+
 document.getElementById("play-button").addEventListener("click", function () {
   resetGame();
   titleScreen.hidden = true;
@@ -1148,6 +1332,7 @@ minecraftTrackInput.addEventListener("change", function () {
 // ------------------------------------------------------------
 function update() {
   updateParticles();
+  updatePlinko();
   if (achievementToastUntil && performance.now() >= achievementToastUntil) {
     achievementToast.hidden = true;
     achievementToastUntil = 0;
@@ -1535,6 +1720,9 @@ function draw() {
   drawBricks();  // bricks.js
   drawParticles();
   ctx.restore();
+  if (!plinkoPage.hidden) {
+    drawPlinko();
+  }
 }
 
 function drawCourt() {

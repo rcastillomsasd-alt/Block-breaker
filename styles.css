@@ -428,7 +428,7 @@ canvas {
 
 .menu-navigation {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
   gap: 10px;
   margin-top: 10px;
 }
@@ -439,6 +439,46 @@ canvas {
 .menu-back-button:focus-visible {
   border-color: #58d4c5;
   color: #58d4c5;
+}
+
+#plinko-board {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgb(255 255 255 / 18%);
+  background: #10191a;
+}
+
+.plinko-controls {
+  display: grid;
+  grid-template-columns: auto minmax(108px, 1fr) minmax(190px, 2fr);
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  color: #a8b8b8;
+  font: bold 10px "Courier New", monospace;
+}
+
+.plinko-controls select {
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid rgb(255 255 255 / 24%);
+  background: #11191b;
+  color: #f6f1ed;
+  font: bold 11px "Courier New", monospace;
+}
+
+.plinko-drop-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.plinko-status {
+  min-height: 2.8em;
+  margin: 12px 0 0;
+  color: #ffdb81;
+  font: 10px/1.5 "Courier New", monospace;
 }
 
 .shop-list {
@@ -2395,6 +2435,14 @@ body.minecraft-level kbd {
 
   .menu-page-heading h2 {
     font-size: 17px;
+  }
+
+  .plinko-controls {
+    grid-template-columns: auto minmax(100px, 1fr);
+  }
+
+  .plinko-drop-button {
+    grid-column: 1 / -1;
   }
 
   .case-odds li {

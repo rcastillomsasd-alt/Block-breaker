@@ -107,7 +107,25 @@
           <button id="cases-button" type="button">CASES</button>
           <button id="shop-button" type="button">SHOP</button>
           <button id="inventory-button" type="button">INVENTORY</button>
+          <button id="plinko-button" type="button">PLINKO</button>
         </nav>
+      </section>
+      <section class="menu-page" id="plinko-page" hidden>
+        <header class="menu-page-heading">
+          <h2>PLINKO</h2>
+          <button class="menu-back-button" type="button">BACK</button>
+        </header>
+        <canvas id="plinko-board" width="600" height="410" aria-label="Plinko board with bouncing balls and coin multipliers"></canvas>
+        <div class="plinko-controls">
+          <label for="plinko-ball-count">BALLS</label>
+          <select id="plinko-ball-count" aria-label="Number of balls to drop">
+            <option value="1">1 BALL</option>
+            <option value="5">5 BALLS</option>
+            <option value="10">10 BALLS</option>
+          </select>
+          <button class="menu-play-button" id="plinko-drop-button" type="button">DROP 1 BALL / 100 COINS</button>
+        </div>
+        <p class="plinko-status" id="plinko-status" role="status" aria-live="polite">Each ball costs 100 coins. Landings pay the multiplier shown in the slot.</p>
       </section>
       <section class="menu-page" id="achievements-page" hidden>
         <header class="menu-page-heading">
