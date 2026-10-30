@@ -117,8 +117,6 @@ let activeCaseType = "paddle";
 let ownedQuickSpin = false;
 let ownedMultiOpen = false;
 let plinkoBalls = [];
-let plinkoQueue = 0;
-let plinkoReleaseCountdown = 0;
 let plinkoBatchPayout = 0;
 let plinkoBatchActive = false;
 
@@ -907,41 +905,39 @@ function showMenuPage(pageId) {
 function updatePlinkoControls() {
   const count = Number(plinkoBallCount.value);
   plinkoDropButton.textContent = `DROP ${count} ${count === 1 ? "BALL" : "BALLS"} / ${(count * PLINKO_COST).toLocaleString()} COINS`;
-  plinkoDropButton.disabled = plinkoBatchActive;
+  plinkoDropButton.disabled = false;
 }
 
 function startPlinkoDrop() {
   const count = Number(plinkoBallCount.value);
   const cost = count * PLINKO_COST;
-  if (plinkoBatchActive) return;
   if (coins < cost) {
     plinkoStatus.textContent = `You need ${(cost - coins).toLocaleString()} more coins to drop ${count} ${count === 1 ? "ball" : "balls"}.`;
     return;
   }
 
+  if (plinkoBalls.length === 0) {
+    plinkoBatchPayout = 0;
+  }
   coins -= cost;
   updateCoinDisplay();
   saveEconomy();
-  plinkoQueue = count;
-  plinkoReleaseCountdown = 0;
-  plinkoBatchPayout = 0;
   plinkoBatchActive = true;
-  plinkoStatus.textContent = `${count} ${count === 1 ? "ball" : "balls"} in play. Good luck.`;
+  const horizontalSpread = Math.min(140, count * 12);
+  for (let index = 0; index < count; index++) {
+    plinkoBalls.push({
+      x: WIDTH / 2 + (Math.random() - 0.5) * horizontalSpread,
+      y: 20,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: 0
+    });
+  }
+  plinkoStatus.textContent = `Dropped ${count} ${count === 1 ? "ball" : "balls"}. ${plinkoBalls.length} in play.`;
   updatePlinkoControls();
 }
 
 function updatePlinko() {
   if (!plinkoBatchActive) return;
-
-  if (plinkoQueue > 0) {
-    if (plinkoReleaseCountdown <= 0) {
-      plinkoBalls.push({ x: WIDTH / 2 + (Math.random() - 0.5) * 5, y: 20, vx: (Math.random() - 0.5) * 0.5, vy: 0 });
-      plinkoQueue--;
-      plinkoReleaseCountdown = 9;
-    } else {
-      plinkoReleaseCountdown--;
-    }
-  }
 
   for (let index = plinkoBalls.length - 1; index >= 0; index--) {
     const ball = plinkoBalls[index];
@@ -996,7 +992,7 @@ function updatePlinko() {
     }
   }
 
-  if (plinkoQueue === 0 && plinkoBalls.length === 0) {
+  if (plinkoBalls.length === 0) {
     plinkoBatchActive = false;
     plinkoStatus.textContent = `DROP COMPLETE. Total return: ${plinkoBatchPayout.toLocaleString()} coins.`;
     updatePlinkoControls();
