@@ -37,6 +37,7 @@ const plinkoPage = document.getElementById("plinko-page");
 const plinkoCanvas = document.getElementById("plinko-board");
 const plinkoCtx = plinkoCanvas.getContext("2d");
 const plinkoBallCount = document.getElementById("plinko-ball-count");
+const plinkoWagerInput = document.getElementById("plinko-wager");
 const plinkoDropButton = document.getElementById("plinko-drop-button");
 const plinkoStatus = document.getElementById("plinko-status");
 const caseReveal = document.getElementById("case-reveal");
@@ -128,17 +129,16 @@ const ACHIEVEMENTS = [
 const ACHIEVEMENT_STORAGE_KEY = "block-breaker-achievements";
 const ECONOMY_STORAGE_KEY = "block-breaker-economy";
 const CASE_COST = 100;
-const PLINKO_COST = 100;
 const PLINKO_LEFT = 66;
 const PLINKO_RIGHT = 534;
 const PLINKO_TOP = 48;
 const PLINKO_FLOOR = 390;
 const PLINKO_SLOT_WIDTH = 36;
-const PLINKO_PAYOUTS = [10, 5, 3, 2, 1.5, 1, 0.5, 1, 1.5, 2, 3, 5, 10];
-const PLINKO_PEGS = Array.from({ length: 12 }, (_, row) =>
+const PLINKO_PAYOUTS = [100, 5, 3, 2, 1.5, 1, 0.5, 1, 1.5, 2, 3, 5, 100];
+const PLINKO_PEGS = Array.from({ length: 14 }, (_, row) =>
   Array.from({ length: row + 1 }, (_, column) => ({
-    x: WIDTH / 2 - row * 18 + column * 36,
-    y: PLINKO_TOP + row * 23
+    x: WIDTH / 2 - row * 15 + column * 30,
+    y: PLINKO_TOP + row * 20
   }))
 ).flat();
 const CASE_REEL_STOP_INDEX = 24;
@@ -904,13 +904,27 @@ function showMenuPage(pageId) {
 
 function updatePlinkoControls() {
   const count = Number(plinkoBallCount.value);
-  plinkoDropButton.textContent = `DROP ${count} ${count === 1 ? "BALL" : "BALLS"} / ${(count * PLINKO_COST).toLocaleString()} COINS`;
-  plinkoDropButton.disabled = false;
+  const wager = Number(plinkoWagerInput.value);
+  const cost = count * wager;
+  const validWager = Number.isSafeInteger(count) && count > 0 && count <= 50
+    && Number.isSafeInteger(wager) && wager > 0
+    && Number.isSafeInteger(cost) && Number.isSafeInteger(cost * 100);
+  plinkoDropButton.textContent = validWager
+    ? `DROP ${count} ${count === 1 ? "BALL" : "BALLS"} / ${cost.toLocaleString()} COINS`
+    : "ENTER A VALID WAGER";
+  plinkoDropButton.disabled = !validWager;
 }
 
 function startPlinkoDrop() {
   const count = Number(plinkoBallCount.value);
-  const cost = count * PLINKO_COST;
+  const wager = Number(plinkoWagerInput.value);
+  const cost = count * wager;
+  if (!Number.isSafeInteger(count) || count < 1 || count > 50
+    || !Number.isSafeInteger(wager) || wager < 1
+    || !Number.isSafeInteger(cost) || !Number.isSafeInteger(cost * 100)) {
+    plinkoStatus.textContent = "Enter a valid coin wager for each ball.";
+    return;
+  }
   if (coins < cost) {
     plinkoStatus.textContent = `You need ${(cost - coins).toLocaleString()} more coins to drop ${count} ${count === 1 ? "ball" : "balls"}.`;
     return;
@@ -929,7 +943,8 @@ function startPlinkoDrop() {
       x: WIDTH / 2 + (Math.random() - 0.5) * horizontalSpread,
       y: 20,
       vx: (Math.random() - 0.5) * 0.5,
-      vy: 0
+      vy: 0,
+      wager
     });
   }
   plinkoStatus.textContent = `Dropped ${count} ${count === 1 ? "ball" : "balls"}. ${plinkoBalls.length} in play.`;
@@ -941,16 +956,21 @@ function updatePlinko() {
 
   for (let index = plinkoBalls.length - 1; index >= 0; index--) {
     const ball = plinkoBalls[index];
+    const previousX = ball.x;
     ball.vy = Math.min(ball.vy + 0.19, 7);
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    if (ball.x < PLINKO_LEFT + 6) {
-      ball.x = PLINKO_LEFT + 6;
-      ball.vx = Math.abs(ball.vx) * 0.72;
-    } else if (ball.x > PLINKO_RIGHT - 6) {
-      ball.x = PLINKO_RIGHT - 6;
-      ball.vx = -Math.abs(ball.vx) * 0.72;
+    const funnelProgress = Math.max(0, Math.min(1, (ball.y - 300) / (PLINKO_FLOOR - 6 - 300)));
+    const railInset = 6 + funnelProgress * (PLINKO_SLOT_WIDTH - 14);
+    const leftBoundary = PLINKO_LEFT + railInset;
+    const rightBoundary = PLINKO_RIGHT - railInset;
+    if (ball.x < leftBoundary) {
+      ball.x = leftBoundary;
+      ball.vx = Math.abs(ball.vx) * 0.72 + 0.08;
+    } else if (ball.x > rightBoundary) {
+      ball.x = rightBoundary;
+      ball.vx = -Math.abs(ball.vx) * 0.72 - 0.08;
     }
 
     for (const peg of PLINKO_PEGS) {
@@ -966,7 +986,7 @@ function updatePlinko() {
       ball.x = peg.x + normalX * minimumDistance;
       ball.y = peg.y + normalY * minimumDistance;
       if (velocityAlongNormal < 0) {
-        ball.vx = (ball.vx - 1.72 * velocityAlongNormal * normalX) * 0.985 + (Math.random() - 0.5) * 0.08;
+        ball.vx = (ball.vx - 1.72 * velocityAlongNormal * normalX) * 0.985 + (Math.random() - 0.5) * 0.18;
         ball.vy = (ball.vy - 1.72 * velocityAlongNormal * normalY) * 0.985;
       }
     }
@@ -975,8 +995,9 @@ function updatePlinko() {
       for (let divider = 1; divider < PLINKO_PAYOUTS.length; divider++) {
         const dividerX = PLINKO_LEFT + divider * PLINKO_SLOT_WIDTH;
         if (Math.abs(ball.x - dividerX) < 6 && ball.y < PLINKO_FLOOR - 6) {
-          ball.x = dividerX + (ball.x < dividerX ? -6 : 6);
-          ball.vx = (ball.x < dividerX ? -1 : 1) * Math.abs(ball.vx) * 0.55;
+          const side = previousX < dividerX ? -1 : 1;
+          ball.x = dividerX + side * 6;
+          ball.vx = side * Math.abs(ball.vx) * 0.55;
         }
       }
     }
@@ -984,7 +1005,7 @@ function updatePlinko() {
     if (ball.y >= PLINKO_FLOOR - 6) {
       const slot = Math.max(0, Math.min(PLINKO_PAYOUTS.length - 1, Math.floor((ball.x - PLINKO_LEFT) / PLINKO_SLOT_WIDTH)));
       const multiplier = PLINKO_PAYOUTS[slot];
-      const payout = Math.floor(PLINKO_COST * multiplier);
+      const payout = Math.floor(ball.wager * multiplier);
       plinkoBatchPayout += payout;
       addCoins(payout);
       plinkoBalls.splice(index, 1);
@@ -1006,9 +1027,16 @@ function drawPlinko() {
   plinkoCtx.fillStyle = gradient;
   plinkoCtx.fillRect(0, 0, plinkoCanvas.width, plinkoCanvas.height);
 
-  plinkoCtx.fillStyle = "#263b3a";
-  plinkoCtx.fillRect(PLINKO_LEFT - 8, 24, 8, PLINKO_FLOOR - 24);
-  plinkoCtx.fillRect(PLINKO_RIGHT, 24, 8, PLINKO_FLOOR - 24);
+  plinkoCtx.strokeStyle = "#263b3a";
+  plinkoCtx.lineWidth = 8;
+  plinkoCtx.beginPath();
+  plinkoCtx.moveTo(PLINKO_LEFT + 6, 24);
+  plinkoCtx.lineTo(PLINKO_LEFT + 6, 300);
+  plinkoCtx.lineTo(PLINKO_LEFT + PLINKO_SLOT_WIDTH - 8, PLINKO_FLOOR - 6);
+  plinkoCtx.moveTo(PLINKO_RIGHT - 6, 24);
+  plinkoCtx.lineTo(PLINKO_RIGHT - 6, 300);
+  plinkoCtx.lineTo(PLINKO_RIGHT - PLINKO_SLOT_WIDTH + 8, PLINKO_FLOOR - 6);
+  plinkoCtx.stroke();
   plinkoCtx.fillStyle = "#59716a";
   plinkoCtx.fillRect(PLINKO_LEFT, PLINKO_FLOOR, PLINKO_RIGHT - PLINKO_LEFT, 4);
 
@@ -1032,7 +1060,7 @@ function drawPlinko() {
       plinkoCtx.fillStyle = "#71877b";
       plinkoCtx.fillRect(slotX - 1, 344, 2, PLINKO_FLOOR - 344);
     }
-    plinkoCtx.fillStyle = multiplier >= 5 ? "#ffbd63" : multiplier < 1 ? "#f27a73" : "#d2e4d7";
+    plinkoCtx.fillStyle = multiplier >= 100 ? "#fff08a" : multiplier >= 5 ? "#ffbd63" : multiplier < 1 ? "#f27a73" : "#d2e4d7";
     plinkoCtx.fillText(`${multiplier}x`, slotX + PLINKO_SLOT_WIDTH / 2, 369);
   });
 
@@ -1057,6 +1085,7 @@ document.getElementById("plinko-button").addEventListener("click", function () {
 });
 
 plinkoBallCount.addEventListener("change", updatePlinkoControls);
+plinkoWagerInput.addEventListener("input", updatePlinkoControls);
 plinkoDropButton.addEventListener("click", startPlinkoDrop);
 
 document.getElementById("play-button").addEventListener("click", function () {
@@ -1378,6 +1407,11 @@ function update() {
       }
     }
 
+    if (equippedTrail && activeBall.trail.length > 0) {
+      activeBall.trail[0].x = activeBall.x + activeBall.width / 2;
+      activeBall.trail[0].y = activeBall.y + activeBall.height / 2;
+    }
+
     if (activeBall.y > HEIGHT) {
       balls.splice(index, 1);
       if (activeBall.isStarter) {
@@ -1566,6 +1600,8 @@ function movePaddle() {
 }
 
 function moveBall(activeBall) {
+  activeBall.previousX = activeBall.x;
+  activeBall.previousY = activeBall.y;
   activeBall.x = activeBall.x + activeBall.vx;
   activeBall.y = activeBall.y + activeBall.vy;
   if (equippedTrail) {
@@ -1577,7 +1613,7 @@ function moveBall(activeBall) {
   }
 }
 
-function drawBallTrail(activeBall) {
+function drawBallTrail(activeBall, frameProgress) {
   const skin = BALL_TRAILS[equippedTrail];
   if (!skin || activeBall.trail.length === 0) {
     return;
@@ -1585,9 +1621,15 @@ function drawBallTrail(activeBall) {
 
   const trailLength = activeBall.trail.length;
   const animationTime = performance.now() / 1000;
-  const animationStep = Math.floor(animationTime * 12);
+  const previousX = Number.isFinite(activeBall.previousX) ? activeBall.previousX : activeBall.x;
+  const previousY = Number.isFinite(activeBall.previousY) ? activeBall.previousY : activeBall.y;
+  const renderX = previousX + (activeBall.x - previousX) * frameProgress;
+  const renderY = previousY + (activeBall.y - previousY) * frameProgress;
   const oldestPoint = activeBall.trail[trailLength - 1];
-  const newestPoint = activeBall.trail[0];
+  const newestPoint = {
+    x: renderX + activeBall.width / 2,
+    y: renderY + activeBall.height / 2
+  };
   const tailGradient = ctx.createLinearGradient(
     newestPoint.x,
     newestPoint.y,
@@ -1634,15 +1676,16 @@ function drawBallTrail(activeBall) {
   activeBall.trail.forEach((point, index) => {
     const progress = index / Math.max(1, trailLength - 1);
     const size = activeBall.width * (0.48 - progress * 0.34);
-    const color = skin.colors[(index + animationStep) % skin.colors.length];
-    const flicker = 0.82 + Math.sin(animationTime * 16 + index * 1.7) * 0.18;
-    ctx.globalAlpha = 0.7 * (1 - progress) * flicker;
+    const colorIndex = Math.min(skin.colors.length - 1, Math.floor(progress * skin.colors.length));
+    const color = skin.colors[colorIndex];
+    const trailPoint = index === 0 ? newestPoint : point;
+    ctx.globalAlpha = 0.7 * (1 - progress);
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
     ctx.shadowColor = skin.glow;
     ctx.shadowBlur = 7 * (1 - progress);
     ctx.save();
-    ctx.translate(point.x, point.y);
+    ctx.translate(trailPoint.x, trailPoint.y);
 
     if (skin.shape === "ring") {
       ctx.beginPath();
@@ -1708,9 +1751,10 @@ function draw() {
   }
   drawCourt();
   drawPaddle();
+  const frameProgress = leftover / STEP;
   for (const activeBall of balls) {
-    drawBallTrail(activeBall);
-    drawBasketball(activeBall);
+    drawBallTrail(activeBall, frameProgress);
+    drawBasketball(activeBall, frameProgress);
   }
 
   drawBricks();  // bricks.js
@@ -1944,6 +1988,20 @@ function drawPaddleSkinEffects(skin) {
     }
   }
 
+  if (skin.sellValue) {
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = "#fff0a6";
+    for (let index = 0; index < 5; index++) {
+      const x = paddle.x + 8 + index * 18;
+      const y = paddle.y + paddle.height / 2 + Math.sin(now / 260 + index) * 2;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillRect(-1.5, -1.5, 3, 3);
+      ctx.restore();
+    }
+  }
+
   ctx.restore();
 }
 
@@ -2069,13 +2127,37 @@ function drawBallSkinEffects(skin, centerX, centerY, radius) {
     }
   }
 
+  if (skin.sellValue) {
+    ctx.globalAlpha = 0.95;
+    ctx.strokeStyle = "#fff0a6";
+    ctx.lineWidth = Math.max(0.8, radius * 0.14);
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.68, now / 900, now / 900 + Math.PI * 0.9);
+    ctx.stroke();
+    ctx.fillStyle = "#fff7c2";
+    for (let index = 0; index < 3; index++) {
+      const angle = now / 700 + index * Math.PI * 2 / 3;
+      ctx.beginPath();
+      ctx.arc(
+        centerX + Math.cos(angle) * radius * 0.55,
+        centerY + Math.sin(angle) * radius * 0.55,
+        Math.max(0.8, radius * 0.12),
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    }
+  }
+
   ctx.restore();
 }
 
-function drawBasketball(activeBall) {
+function drawBasketball(activeBall, frameProgress) {
   const radius = activeBall.width / 2;
-  const centerX = activeBall.x + radius;
-  const centerY = activeBall.y + radius;
+  const previousX = Number.isFinite(activeBall.previousX) ? activeBall.previousX : activeBall.x;
+  const previousY = Number.isFinite(activeBall.previousY) ? activeBall.previousY : activeBall.y;
+  const centerX = previousX + (activeBall.x - previousX) * frameProgress + radius;
+  const centerY = previousY + (activeBall.y - previousY) * frameProgress + radius;
   const skin = BALL_SKINS[equippedBallSkin];
   if (skin) {
     const skinGradient = ctx.createRadialGradient(

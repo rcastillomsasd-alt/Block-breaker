@@ -117,15 +117,19 @@
         </header>
         <canvas id="plinko-board" width="600" height="410" aria-label="Plinko board with bouncing balls and coin multipliers"></canvas>
         <div class="plinko-controls">
+          <label for="plinko-wager">COINS PER BALL</label>
+          <input id="plinko-wager" type="number" min="1" step="1" value="100" aria-label="Coins wagered per ball">
           <label for="plinko-ball-count">BALLS</label>
           <select id="plinko-ball-count" aria-label="Number of balls to drop">
             <option value="1">1 BALL</option>
             <option value="5">5 BALLS</option>
             <option value="10">10 BALLS</option>
+            <option value="25">25 BALLS</option>
+            <option value="50">50 BALLS</option>
           </select>
           <button class="menu-play-button" id="plinko-drop-button" type="button">DROP 1 BALL / 100 COINS</button>
         </div>
-        <p class="plinko-status" id="plinko-status" role="status" aria-live="polite">Each ball costs 100 coins. Landings pay the multiplier shown in the slot.</p>
+        <p class="plinko-status" id="plinko-status" role="status" aria-live="polite">Choose a wager per ball. Landings pay that wager times the slot multiplier.</p>
       </section>
       <section class="menu-page" id="achievements-page" hidden>
         <header class="menu-page-heading">
