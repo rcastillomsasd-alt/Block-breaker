@@ -135,10 +135,10 @@ const PLINKO_TOP = 48;
 const PLINKO_FLOOR = 390;
 const PLINKO_SLOT_WIDTH = 36;
 const PLINKO_PAYOUTS = [100, 5, 3, 2, 1.5, 1, 0.5, 1, 1.5, 2, 3, 5, 100];
-const PLINKO_PEGS = Array.from({ length: 14 }, (_, row) =>
+const PLINKO_PEGS = Array.from({ length: 17 }, (_, row) =>
   Array.from({ length: row + 1 }, (_, column) => ({
-    x: WIDTH / 2 - row * 15 + column * 30,
-    y: PLINKO_TOP + row * 20
+    x: WIDTH / 2 - row * 12 + column * 24,
+    y: PLINKO_TOP + row * 16
   }))
 ).flat();
 const CASE_REEL_STOP_INDEX = 24;
@@ -906,9 +906,9 @@ function updatePlinkoControls() {
   const count = Number(plinkoBallCount.value);
   const wager = Number(plinkoWagerInput.value);
   const cost = count * wager;
-  const validWager = Number.isSafeInteger(count) && count > 0 && count <= 50
-    && Number.isSafeInteger(wager) && wager > 0
-    && Number.isSafeInteger(cost) && Number.isSafeInteger(cost * 100);
+  const validWager = Number.isInteger(count) && count > 0 && count <= 50
+    && Number.isInteger(wager) && wager > 0
+    && Number.isFinite(cost) && Number.isFinite(cost * 100);
   plinkoDropButton.textContent = validWager
     ? `DROP ${count} ${count === 1 ? "BALL" : "BALLS"} / ${cost.toLocaleString()} COINS`
     : "ENTER A VALID WAGER";
@@ -919,9 +919,9 @@ function startPlinkoDrop() {
   const count = Number(plinkoBallCount.value);
   const wager = Number(plinkoWagerInput.value);
   const cost = count * wager;
-  if (!Number.isSafeInteger(count) || count < 1 || count > 50
-    || !Number.isSafeInteger(wager) || wager < 1
-    || !Number.isSafeInteger(cost) || !Number.isSafeInteger(cost * 100)) {
+  if (!Number.isInteger(count) || count < 1 || count > 50
+    || !Number.isInteger(wager) || wager < 1
+    || !Number.isFinite(cost) || !Number.isFinite(cost * 100)) {
     plinkoStatus.textContent = "Enter a valid coin wager for each ball.";
     return;
   }
@@ -962,7 +962,7 @@ function updatePlinko() {
     ball.y += ball.vy;
 
     const funnelProgress = Math.max(0, Math.min(1, (ball.y - 300) / (PLINKO_FLOOR - 6 - 300)));
-    const railInset = 6 + funnelProgress * (PLINKO_SLOT_WIDTH - 14);
+    const railInset = 6 + funnelProgress * (PLINKO_SLOT_WIDTH + 6);
     const leftBoundary = PLINKO_LEFT + railInset;
     const rightBoundary = PLINKO_RIGHT - railInset;
     if (ball.x < leftBoundary) {
@@ -986,7 +986,7 @@ function updatePlinko() {
       ball.x = peg.x + normalX * minimumDistance;
       ball.y = peg.y + normalY * minimumDistance;
       if (velocityAlongNormal < 0) {
-        ball.vx = (ball.vx - 1.72 * velocityAlongNormal * normalX) * 0.985 + (Math.random() - 0.5) * 0.18;
+        ball.vx = (ball.vx - 1.72 * velocityAlongNormal * normalX) * 0.985 + (Math.random() - 0.5) * 0.32;
         ball.vy = (ball.vy - 1.72 * velocityAlongNormal * normalY) * 0.985;
       }
     }
@@ -1032,10 +1032,10 @@ function drawPlinko() {
   plinkoCtx.beginPath();
   plinkoCtx.moveTo(PLINKO_LEFT + 6, 24);
   plinkoCtx.lineTo(PLINKO_LEFT + 6, 300);
-  plinkoCtx.lineTo(PLINKO_LEFT + PLINKO_SLOT_WIDTH - 8, PLINKO_FLOOR - 6);
+  plinkoCtx.lineTo(PLINKO_LEFT + PLINKO_SLOT_WIDTH + 12, PLINKO_FLOOR - 6);
   plinkoCtx.moveTo(PLINKO_RIGHT - 6, 24);
   plinkoCtx.lineTo(PLINKO_RIGHT - 6, 300);
-  plinkoCtx.lineTo(PLINKO_RIGHT - PLINKO_SLOT_WIDTH + 8, PLINKO_FLOOR - 6);
+  plinkoCtx.lineTo(PLINKO_RIGHT - PLINKO_SLOT_WIDTH - 12, PLINKO_FLOOR - 6);
   plinkoCtx.stroke();
   plinkoCtx.fillStyle = "#59716a";
   plinkoCtx.fillRect(PLINKO_LEFT, PLINKO_FLOOR, PLINKO_RIGHT - PLINKO_LEFT, 4);
