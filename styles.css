@@ -441,6 +441,239 @@ canvas {
   color: #58d4c5;
 }
 
+#starfall-button {
+  border-color: #d7bd75;
+  color: #f4d988;
+  background: linear-gradient(135deg, rgb(215 189 117 / 14%), transparent 72%);
+}
+
+#starfall-button:hover,
+#starfall-button:focus-visible {
+  border-color: #fff0a6;
+  color: #fff0a6;
+  box-shadow: 0 0 18px rgb(255 208 101 / 18%);
+}
+
+.starfall-game[hidden] {
+  display: none;
+}
+
+.starfall-game {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  overflow: hidden;
+  background: #9dc8d7;
+  color: #f8f2df;
+  font-family: "Courier New", monospace;
+}
+
+#starfall-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.starfall-hud {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: max(18px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  pointer-events: none;
+}
+
+.starfall-topbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 18px;
+  text-shadow: 0 2px 12px rgb(18 30 31 / 55%);
+}
+
+.starfall-topbar button {
+  min-width: 76px;
+  min-height: 42px;
+  border: 1px solid rgb(255 245 213 / 56%);
+  background: rgb(18 30 31 / 62%);
+  color: #fff2cc;
+  cursor: pointer;
+  font: bold 11px "Courier New", monospace;
+  pointer-events: auto;
+}
+
+.starfall-title-lockup {
+  display: grid;
+  gap: 7px;
+  justify-self: center;
+  text-align: center;
+}
+
+.starfall-title-lockup span,
+.starfall-star-count span {
+  color: #d2e7db;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0;
+}
+
+.starfall-title-lockup strong {
+  color: #fff4d2;
+  font-size: 17px;
+  text-shadow: 0 2px 18px rgb(16 28 29 / 62%);
+}
+
+.starfall-star-count {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  margin: 0;
+}
+
+.starfall-star-count strong {
+  color: #ffe486;
+  font-size: 18px;
+}
+
+.starfall-objective,
+.starfall-prompt {
+  align-self: center;
+  max-width: min(520px, 90vw);
+  margin: auto 0 16px;
+  padding: 11px 16px;
+  border: 1px solid rgb(255 242 207 / 34%);
+  background: rgb(15 27 29 / 62%);
+  color: #f7edd1;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+  text-shadow: 0 1px 5px #111;
+}
+
+.starfall-prompt[hidden] {
+  display: none;
+}
+
+.starfall-key-guide {
+  align-self: center;
+  margin: 0 0 4px;
+  color: rgb(255 248 226 / 86%);
+  font-size: 9px;
+  font-weight: bold;
+  text-align: center;
+  text-shadow: 0 1px 7px #111;
+}
+
+.starfall-key-guide span {
+  margin-left: 12px;
+}
+
+.starfall-touch-controls {
+  display: none;
+}
+
+@media (max-width: 640px), (pointer: coarse) {
+  .starfall-hud {
+    padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+
+  .starfall-topbar {
+    gap: 8px;
+  }
+
+  .starfall-title-lockup {
+    gap: 4px;
+  }
+
+  .starfall-title-lockup span,
+  .starfall-star-count span {
+    font-size: 7px;
+  }
+
+  .starfall-title-lockup strong,
+  .starfall-star-count strong {
+    font-size: 12px;
+  }
+
+  .starfall-topbar button {
+    min-width: 54px;
+    min-height: 36px;
+    font-size: 9px;
+  }
+
+  .starfall-key-guide {
+    display: none;
+  }
+
+  .starfall-objective,
+  .starfall-prompt {
+    margin-bottom: auto;
+    font-size: 9px;
+  }
+
+  .starfall-touch-controls {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 12px;
+    pointer-events: none;
+  }
+
+  .starfall-action-controls {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    pointer-events: auto;
+  }
+
+  .starfall-dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 48px);
+    grid-template-rows: repeat(2, 48px);
+    gap: 4px;
+    pointer-events: auto;
+  }
+
+  .starfall-dpad button,
+  .starfall-jump,
+  .starfall-interact {
+    border: 1px solid rgb(255 242 207 / 62%);
+    background: rgb(15 27 29 / 62%);
+    color: #fff2cc;
+    font: bold 12px "Courier New", monospace;
+    touch-action: none;
+  }
+
+  .starfall-dpad [data-starfall-move="forward"] { grid-column: 2; }
+  .starfall-dpad [data-starfall-move="left"] { grid-column: 1; grid-row: 2; }
+  .starfall-dpad [data-starfall-move="back"] { grid-column: 2; grid-row: 2; }
+  .starfall-dpad [data-starfall-move="right"] { grid-column: 3; grid-row: 2; }
+
+  .starfall-jump {
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    font-size: 10px;
+    pointer-events: auto;
+  }
+
+  .starfall-interact {
+    min-width: 74px;
+    min-height: 38px;
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starfall-game * {
+    scroll-behavior: auto !important;
+  }
+}
+
 #plinko-board {
   display: block;
   width: 100%;

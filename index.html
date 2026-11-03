@@ -108,6 +108,7 @@
           <button id="shop-button" type="button">SHOP</button>
           <button id="inventory-button" type="button">INVENTORY</button>
           <button id="plinko-button" type="button">PLINKO</button>
+          <button id="starfall-button" type="button">STARFALL</button>
         </nav>
       </section>
       <section class="menu-page" id="plinko-page" hidden>
@@ -270,9 +271,39 @@
     </section>
   </div>
 
+  <section class="starfall-game" id="starfall-game" aria-label="Starfall Castle platform game" hidden>
+    <canvas id="starfall-canvas" aria-label="Explore a castle courtyard, enter painted portals, and collect stars" tabindex="0"></canvas>
+    <div class="starfall-hud">
+      <header class="starfall-topbar">
+        <button id="starfall-exit" type="button" title="Return to the main menu">MENU</button>
+        <div class="starfall-title-lockup">
+          <span>STARFALL / EXPLORER'S ATLAS</span>
+          <strong id="starfall-world-name">THE LANTERN KEEP</strong>
+        </div>
+        <p class="starfall-star-count"><span>STARS</span><strong id="starfall-star-count">0 / 3</strong></p>
+      </header>
+      <p class="starfall-objective" id="starfall-objective">Find a painted gate in the courtyard.</p>
+      <p class="starfall-prompt" id="starfall-prompt" hidden></p>
+      <p class="starfall-key-guide">WASD / ARROWS MOVE <span>SPACE JUMP</span> <span>E ENTER</span> MOUSE DRAG LOOK</p>
+      <div class="starfall-touch-controls" aria-label="Touch movement controls">
+        <div class="starfall-dpad">
+          <button type="button" data-starfall-move="forward" aria-label="Move forward">W</button>
+          <button type="button" data-starfall-move="left" aria-label="Move left">A</button>
+          <button type="button" data-starfall-move="back" aria-label="Move backward">S</button>
+          <button type="button" data-starfall-move="right" aria-label="Move right">D</button>
+        </div>
+        <div class="starfall-action-controls">
+          <button class="starfall-jump" id="starfall-jump" type="button">JUMP</button>
+          <button class="starfall-interact" id="starfall-interact" type="button">ENTER</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- The order matters: game.js goes first because the other files use its settings. -->
   <script src="game.js"></script>
   <script src="bricks.js"></script>
   <script src="collisions.js"></script>
+  <script type="module" src="/castle-mode.js"></script>
 </body>
 </html>
