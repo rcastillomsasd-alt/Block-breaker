@@ -454,6 +454,13 @@ canvas {
   box-shadow: 0 0 18px rgb(255 208 101 / 18%);
 }
 
+.starfall-status {
+  margin: 12px 0 0;
+  color: #ff8589;
+  font: bold 11px "Courier New", monospace;
+  text-align: center;
+}
+
 .starfall-game[hidden] {
   display: none;
 }

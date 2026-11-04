@@ -7,17 +7,14 @@ const enterButton = document.getElementById("starfall-button");
 const exitButton = document.getElementById("starfall-exit");
 const objective = document.getElementById("starfall-objective");
 const prompt = document.getElementById("starfall-prompt");
+const status = document.getElementById("starfall-status");
 const worldName = document.getElementById("starfall-world-name");
 const starCount = document.getElementById("starfall-star-count");
 const touchButtons = document.querySelectorAll("[data-starfall-move]");
 const jumpButton = document.getElementById("starfall-jump");
 const interactButton = document.getElementById("starfall-interact");
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+let renderer;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 180);
@@ -292,6 +289,7 @@ function makePlayer() {
 }
 
 function resize() {
+  if (!renderer) return;
   const width = Math.max(1, gameScreen.clientWidth);
   const height = Math.max(1, gameScreen.clientHeight);
   renderer.setSize(width, height, false);
@@ -326,17 +324,35 @@ function setWorld(destination) {
 }
 
 function start() {
+  if (!renderer) {
+    try {
+      const nextRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      nextRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
+      nextRenderer.shadowMap.enabled = true;
+      nextRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      nextRenderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer = nextRenderer;
+    } catch (error) {
+      console.error("Starfall could not initialize WebGL.", error);
+      status.textContent = "Starfall could not start. Enable WebGL or try a current browser.";
+      status.hidden = false;
+      return false;
+    }
+  }
+
   active = true;
   held.clear();
   touchHeld.clear();
   stars = 0;
   starCount.textContent = "0 / 3";
   titleScreen.hidden = true;
+  status.hidden = true;
   gameScreen.hidden = false;
   resize();
   setWorld("hub");
   canvas.focus({ preventScroll: true });
   clock.getDelta();
+  return true;
 }
 
 function exit() {
@@ -468,8 +484,7 @@ player = makePlayer();
 setWorld("hub");
 
 enterButton.addEventListener("click", () => {
-  start();
-  beginFrame();
+  if (start()) beginFrame();
 });
 exitButton.addEventListener("click", exit);
 window.addEventListener("resize", resize);
