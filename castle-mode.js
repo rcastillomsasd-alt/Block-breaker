@@ -1,6 +1,8 @@
 import * as THREE from "three";
 
 const canvas = document.getElementById("starfall-canvas");
+const fallbackCanvas = document.getElementById("starfall-fallback-canvas");
+const fallbackCtx = fallbackCanvas.getContext("2d");
 const gameScreen = document.getElementById("starfall-game");
 const titleScreen = document.getElementById("title-screen");
 const exitButton = document.getElementById("starfall-exit");
@@ -14,6 +16,7 @@ const jumpButton = document.getElementById("starfall-jump");
 const interactButton = document.getElementById("starfall-interact");
 
 let renderer;
+let fallbackMode = false;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 180);
@@ -288,9 +291,16 @@ function makePlayer() {
 }
 
 function resize() {
-  if (!renderer) return;
   const width = Math.max(1, gameScreen.clientWidth);
   const height = Math.max(1, gameScreen.clientHeight);
+  if (fallbackMode) {
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.8);
+    fallbackCanvas.width = Math.round(width * pixelRatio);
+    fallbackCanvas.height = Math.round(height * pixelRatio);
+    fallbackCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    return;
+  }
+  if (!renderer) return;
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
@@ -313,9 +323,10 @@ function setWorld(destination) {
   scene.background = new THREE.Color(inHub ? 0x9bc7d3 : worlds[destination].color);
   scene.fog = new THREE.Fog(inHub ? 0x9bc7d3 : worlds[destination].fog, 38, 95);
   worldName.textContent = inHub ? "THE LANTERN KEEP" : worlds[destination].name;
-  objective.textContent = inHub
+  const description = inHub
     ? stars === 3 ? "Every star is yours. Wander the courtyard or explore again." : "Find a painted gate and press E to explore its world."
     : `Explore ${worlds[destination].name.toLowerCase()} and touch the star.`;
+  objective.textContent = fallbackMode ? `2D mode. ${description}` : description;
   player.position.set(0, 0, inHub ? 13 : 10);
   velocityY = 0;
   grounded = true;
@@ -323,7 +334,7 @@ function setWorld(destination) {
 }
 
 function start() {
-  if (!renderer) {
+  if (!renderer && !fallbackMode) {
     try {
       const nextRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
       nextRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
@@ -333,12 +344,12 @@ function start() {
       renderer = nextRenderer;
     } catch (error) {
       console.error("Starfall could not initialize WebGL.", error);
-      status.textContent = "Starfall could not start. Enable WebGL or try a current browser.";
-      status.hidden = false;
-      return false;
+      fallbackMode = true;
     }
   }
 
+  canvas.hidden = fallbackMode;
+  fallbackCanvas.hidden = !fallbackMode;
   active = true;
   held.clear();
   touchHeld.clear();
@@ -349,7 +360,7 @@ function start() {
   gameScreen.hidden = false;
   resize();
   setWorld("hub");
-  canvas.focus({ preventScroll: true });
+  (fallbackMode ? fallbackCanvas : canvas).focus({ preventScroll: true });
   clock.getDelta();
   return true;
 }
@@ -447,8 +458,116 @@ function frame() {
   if (!active) return;
   const delta = Math.min(clock.getDelta(), 0.04);
   update(delta);
-  renderer.render(scene, camera);
+  if (fallbackMode) {
+    drawFallback();
+  } else {
+    renderer.render(scene, camera);
+  }
   requestAnimationFrame(frame);
+}
+
+function drawFallback() {
+  const width = gameScreen.clientWidth;
+  const height = gameScreen.clientHeight;
+  const scale = Math.min(width / 42, height / 44);
+  const context = fallbackCtx;
+  const hubView = currentWorld === "hub";
+
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = hubView ? "#9bc7d3" : currentWorld === "ruins" ? "#35405d" : "#9bcde8";
+  context.fillRect(0, 0, width, height);
+  context.save();
+  context.translate(width / 2, height / 2);
+  context.scale(scale, scale);
+  context.fillStyle = hubView ? "#829b76" : currentWorld === "ruins" ? "#596052" : "#6da76d";
+  context.fillRect(-19, -20, 38, 40);
+  context.strokeStyle = "rgb(255 255 255 / 28%)";
+  context.lineWidth = 0.08;
+  for (let tile = -18; tile <= 18; tile += 3) {
+    context.beginPath();
+    context.moveTo(tile, -19);
+    context.lineTo(tile, 19);
+    context.moveTo(-19, tile);
+    context.lineTo(19, tile);
+    context.stroke();
+  }
+
+  if (hubView) {
+    context.fillStyle = "#b9b39a";
+    context.fillRect(-17, -13, 34, 20);
+    gates.forEach(gate => {
+      context.fillStyle = "#555c55";
+      context.fillRect(gate.x - 2, -11, 4, 4);
+      context.fillStyle = gate.color;
+      context.fillRect(gate.x - 1.45, -10.6, 2.9, 3.2);
+      context.fillStyle = "#192b2d";
+      context.font = "0.55px Courier New";
+      context.textAlign = "center";
+      context.fillText(gate.name, gate.x, -11.3);
+    });
+    for (const [treeX, treeZ] of [[-15, -3], [-12, 8], [12, 8], [15, -3], [-15, 14], [15, 14]]) {
+      context.fillStyle = "#754d37";
+      context.fillRect(treeX - 0.18, treeZ - 0.2, 0.36, 1.1);
+      context.fillStyle = "#2d704f";
+      context.beginPath();
+      context.arc(treeX, treeZ - 0.3, 1.05, 0, Math.PI * 2);
+      context.fill();
+    }
+  } else if (currentWorld === "clouds") {
+    context.fillStyle = "#f3f2e7";
+    for (let cloud = 0; cloud < 6; cloud++) {
+      context.beginPath();
+      context.ellipse(-14 + cloud * 5, -12 + (cloud % 2) * 2, 2.2, 0.8, 0, 0, Math.PI * 2);
+      context.fill();
+    }
+  } else if (currentWorld === "ruins") {
+    context.fillStyle = "#b9b39a";
+    for (const pillarX of [-12, -8, 8, 12]) {
+      context.fillRect(pillarX - 0.8, -13, 1.6, 5);
+    }
+  } else {
+    context.fillStyle = "#2d704f";
+    for (const treeX of [-12, -8, 8, 12]) {
+      context.beginPath();
+      context.arc(treeX, -9, 1.2, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+
+  if (!hubView) {
+    const [starX, , starZ] = worlds[currentWorld].star;
+    const pulse = 0.8 + Math.sin(performance.now() * 0.004) * 0.12;
+    context.save();
+    context.translate(starX, starZ);
+    context.rotate(performance.now() * 0.0007);
+    context.fillStyle = "#ffdf68";
+    context.beginPath();
+    for (let point = 0; point < 10; point++) {
+      const radius = (point % 2 ? 0.4 : 0.9) * pulse;
+      const angle = -Math.PI / 2 + point * Math.PI / 5;
+      context.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+    }
+    context.closePath();
+    context.fill();
+    context.restore();
+  }
+
+  context.translate(player.position.x, player.position.z);
+  context.rotate(yaw);
+  context.fillStyle = "#387a87";
+  context.fillRect(-0.55, -0.45, 1.1, 0.9);
+  context.fillStyle = "#d9a77d";
+  context.beginPath();
+  context.arc(0, -0.28, 0.32, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = "#f2c85b";
+  context.beginPath();
+  context.moveTo(0, -0.95);
+  context.lineTo(-0.22, -0.58);
+  context.lineTo(0.22, -0.58);
+  context.closePath();
+  context.fill();
+  context.restore();
 }
 
 function beginFrame() {
@@ -506,18 +625,20 @@ document.addEventListener("keydown", event => {
 });
 
 document.addEventListener("keyup", event => held.delete(event.key.toLowerCase()));
-canvas.addEventListener("pointerdown", event => {
-  pointerHeld = true;
-  previousPointerX = event.clientX;
-  canvas.setPointerCapture(event.pointerId);
+[canvas, fallbackCanvas].forEach(gameCanvas => {
+  gameCanvas.addEventListener("pointerdown", event => {
+    pointerHeld = true;
+    previousPointerX = event.clientX;
+    gameCanvas.setPointerCapture(event.pointerId);
+  });
+  gameCanvas.addEventListener("pointermove", event => {
+    if (!pointerHeld || event.pointerType === "touch") return;
+    yaw += (event.clientX - previousPointerX) * 0.006;
+    previousPointerX = event.clientX;
+  });
+  gameCanvas.addEventListener("pointerup", () => { pointerHeld = false; });
+  gameCanvas.addEventListener("pointercancel", () => { pointerHeld = false; });
 });
-canvas.addEventListener("pointermove", event => {
-  if (!pointerHeld || event.pointerType === "touch") return;
-  yaw += (event.clientX - previousPointerX) * 0.006;
-  previousPointerX = event.clientX;
-});
-canvas.addEventListener("pointerup", () => { pointerHeld = false; });
-canvas.addEventListener("pointercancel", () => { pointerHeld = false; });
 
 touchButtons.forEach(button => {
   const direction = button.dataset.starfallMove;

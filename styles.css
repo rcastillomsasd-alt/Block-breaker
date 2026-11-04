@@ -484,6 +484,19 @@ canvas {
   touch-action: none;
 }
 
+#starfall-fallback-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#starfall-canvas[hidden],
+#starfall-fallback-canvas[hidden] {
+  display: none;
+}
+
 .starfall-hud {
   position: absolute;
   inset: 0;
