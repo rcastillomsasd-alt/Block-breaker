@@ -29,6 +29,8 @@ const comboDisplay = document.getElementById("combo-display");
 const achievementCount = document.getElementById("achievement-count");
 const achievementToast = document.getElementById("achievement-toast");
 const titleScreen = document.getElementById("title-screen");
+const starfallButton = document.getElementById("starfall-button");
+const starfallStatus = document.getElementById("starfall-status");
 const gameMenuButton = document.getElementById("game-menu-button");
 const menuCoinCount = document.getElementById("menu-coin-count");
 const coinCount = document.getElementById("coin-count");
@@ -1092,6 +1094,16 @@ document.getElementById("play-button").addEventListener("click", function () {
   resetGame();
   titleScreen.hidden = true;
   gameMenuButton.hidden = false;
+});
+
+starfallButton.addEventListener("click", function () {
+  if (typeof window.startStarfall === "function") {
+    window.startStarfall();
+    return;
+  }
+
+  starfallStatus.textContent = "Starfall did not load. Open the game through its Vite server and reload.";
+  starfallStatus.hidden = false;
 });
 
 document.getElementById("achievements-button").addEventListener("click", function () {

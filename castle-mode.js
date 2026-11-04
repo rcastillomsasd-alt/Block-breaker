@@ -3,7 +3,6 @@ import * as THREE from "three";
 const canvas = document.getElementById("starfall-canvas");
 const gameScreen = document.getElementById("starfall-game");
 const titleScreen = document.getElementById("title-screen");
-const enterButton = document.getElementById("starfall-button");
 const exitButton = document.getElementById("starfall-exit");
 const objective = document.getElementById("starfall-objective");
 const prompt = document.getElementById("starfall-prompt");
@@ -483,9 +482,9 @@ stages = { meadow: activeStage, clouds: cloudStage, ruins: ruinStage };
 player = makePlayer();
 setWorld("hub");
 
-enterButton.addEventListener("click", () => {
+window.startStarfall = () => {
   if (start()) beginFrame();
-});
+};
 exitButton.addEventListener("click", exit);
 window.addEventListener("resize", resize);
 window.addEventListener("blur", () => {
